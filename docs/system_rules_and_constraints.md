@@ -105,3 +105,91 @@ stateDiagram-v2
 1. **Konsistensi Struktur Ganda**: Data wajib sinkron antara `Priority Queue` (untuk alur pemanggilan urutan) dan `Hash Table` (untuk pencarian, update status, dan pembatalan instan $O(1)$).
 2. **Persistensi File**: Setiap perubahan data (`insert`, `update`, `cancel`, `call`) harus otomatis disimpan ke file penyimpanan (`data_pasien_rs.txt`) untuk mencegah kehilangan data.
 3. **Desain Modular**: Kode C++ wajib dipisah ke dalam header (`.h`) dan source (`.cpp`) untuk menjaga kualitas, keterbacaan, dan modularitas sistem.
+
+### 4.1 Desain Arsitektur Program
+
+Berikut adalah diagram alur data dan arsitektur sistem dari Frontend Web, Backend API, hingga C++ Database Engine:
+
+```mermaid
+flowchart TB
+    %% Class Definitions
+    classDef front fill:mistyrose,stroke:lightcoral,stroke-width:2px,color:darkred,rx:8px,ry:8px;
+    classDef back fill:peachpuff,stroke:sandybrown,stroke-width:2px,color:saddlebrown,rx:8px,ry:8px;
+    classDef cpp fill:lightyellow,stroke:darkkhaki,stroke-width:2px,color:darkgoldenrod,rx:8px,ry:8px;
+    classDef mem fill:honeydew,stroke:lightgreen,stroke-width:2px,color:darkgreen,rx:8px,ry:8px;
+    classDef store fill:lightcyan,stroke:cadetblue,stroke-width:2px,color:teal,rx:8px,ry:8px;
+
+    subgraph Frontend ["Layer 1: Presentation (React SPA + Vite)"]
+        UI["Dashboard Web UI (App.jsx)"]
+        SVG["Chart Module (SVG Benchmark Rendering)"]
+        Client["HTTP Client (Fetch API)"]
+    end
+    class UI,SVG,Client front;
+
+    subgraph Backend ["Layer 2: API Gateway (Node.js + Express)"]
+        Server["Express.js Server (server.js)"]
+        Spawn["Child Process Controller (child_process.spawn)"]
+    end
+    class Server,Spawn back;
+
+    subgraph CPP_Engine ["Layer 3: Core Logic (Modular C++ Engine)"]
+        Main["Main Entry (main.cpp)"]
+        QueueCtrl["Queue Manager (QueueSystem.cpp)"]
+        Bench["Benchmark Engine (Benchmark.cpp)"]
+    end
+    class Main,QueueCtrl,Bench cpp;
+
+    subgraph Memory ["Layer 4: In-Memory Data Structures (C++)"]
+        Heap["Priority Queue (std::priority_queue) <br/> Min-Heap: Medically Sorted"]
+        HashMap["Hash Table (std::unordered_map) <br/> O(1) Quick Lookup / Updates"]
+        QueueFIFO["Standard Queue (std::queue) <br/> FIFO Comparator (Benchmark Only)"]
+    end
+    class Heap,HashMap,QueueFIFO mem;
+
+    subgraph Storage ["Layer 5: Storage & Persistence"]
+        DB[("Database File <br/> (data_pasien_rs.txt)")]
+        BenchJSON[("Benchmark Data <br/> (benchmark_results.json)")]
+    end
+    class DB,BenchJSON store;
+
+    %% Subgraph Styling (Consistent Pastel Gradients)
+    style Frontend fill:mistyrose,stroke:lightcoral,stroke-width:1px,color:darkred
+    style Backend fill:papayawhip,stroke:sandybrown,stroke-width:1px,color:saddlebrown
+    style CPP_Engine fill:lightyellow,stroke:darkkhaki,stroke-width:1px,color:darkgoldenrod
+    style Memory fill:honeydew,stroke:lightgreen,stroke-width:1px,color:darkgreen
+    style Storage fill:lightcyan,stroke:cadetblue,stroke-width:1px,color:teal
+
+    %% Component Connections
+    UI --- SVG
+    UI --- Client
+    Server --- Spawn
+    Main --> QueueCtrl
+    Main --> Bench
+    QueueCtrl --> Heap
+    QueueCtrl --> HashMap
+    Bench --> QueueFIFO
+
+    %% Communications and Data Flows
+    Client ==>|"HTTP Requests (REST / JSON)"| Server
+    Server ==>|"HTTP Responses (JSON)"| Client
+    
+    Spawn ==>|"Execute Process <br/> ./hospital_queue --json '...'"| Main
+    Spawn ==>|"Execute Benchmark <br/> ./hospital_queue --benchmark <scale>"| Main
+    
+    Main ==>|"Stdout JSON Result"| Spawn
+    
+    QueueCtrl <-->|"Read / Write Records"| DB
+    Bench --->|"Generate Results"| BenchJSON
+    Server <---|"Read File"| BenchJSON
+
+    %% Link Styling (Flow Lines)
+    linkStyle 8 stroke:lightcoral,stroke-width:3px,color:darkred;
+    linkStyle 9 stroke:lightcoral,stroke-width:3px,color:darkred;
+    linkStyle 10 stroke:sandybrown,stroke-width:3px,color:saddlebrown;
+    linkStyle 11 stroke:sandybrown,stroke-width:3px,color:saddlebrown;
+    linkStyle 12 stroke:sandybrown,stroke-width:3px,color:saddlebrown;
+    linkStyle 13 stroke:green,stroke-width:2px,color:darkgreen;
+    linkStyle 14 stroke:cadetblue,stroke-width:2px,color:teal;
+    linkStyle 15 stroke:green,stroke-width:2px,color:darkgreen;
+```
+
