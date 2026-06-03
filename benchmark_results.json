@@ -1,0 +1,13 @@
+{
+  "scale": 1000,
+  "priority_queue": {
+    "insert_time_us": 457,
+    "call_next_time_us": 515,
+    "search_time_us": 0
+  },
+  "standard_queue": {
+    "insert_time_us": 159,
+    "call_next_time_us": 49,
+    "search_time_us": 6
+  }
+}

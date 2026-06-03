@@ -208,3 +208,24 @@ To align with modern high-premium standards, the Web UI will utilize the followi
   * **Form Registration**: Semi-transparent floating form inputs with custom styling.
   * **Real-time Queue Table**: Interactive rows showing waiting, active, finished, and cancelled patients.
   * **Performance & Benchmark Tab**: Visualizes execution times for Priority Queue vs. Standard Queue across 100, 1000, and 10000 data inputs using a clean SVG-rendered bar chart or Chart.js line graph.
+
+---
+
+## 5. Hosting & Local File Operations
+
+To handle data persistence seamlessly while offering a web-based client, the system operates as a locally hosted web app. Here is how hosting and file operations are managed:
+
+### A. Local Hosting (Standard Use Case)
+1. **Execution**: The user starts the server locally (`npm start` or `node server.js`) inside the `web/backend/` directory.
+2. **Process Spawn**: The Express API server running on `localhost:3000` spawns the locally compiled C++ binary (`../../hospital_queue`).
+3. **File Operations**: The C++ program reads from and writes to `data_pasien_rs.txt` in the root workspace directory. Because Node.js and C++ run outside the browser sandbox, they have full native disk permissions to read/write this file.
+4. **Data Persistence**: The file is stored natively on the user's hard drive. It survives program terminations, server reboots, and browser refreshes.
+
+### B. VPS / Cloud Hosting (e.g., AWS, DigitalOcean)
+If you want to host the system online for multiple users:
+1. **Compilation**: Compile the C++ files directly on the target host (e.g. Linux VPS) to generate the Linux executable.
+2. **Persistence**: The C++ code continues writing to `data_pasien_rs.txt` on the VPS SSD/HDD.
+3. **Access**: Staf can open the URL (e.g., `http://192.168.1.100:3000` or `https://rs-queue.mygroup.com`) from any device. The backend handles the queue state centralized on the server.
+
+### C. Serverless Platforms (Not Recommended)
+Platforms like Vercel, Netlify, or AWS Lambda are stateless and read-only. They do not allow spawning local C++ binaries with persistent local file writes. Therefore, **standard VPS hosting or local machine hosting is required** to keep file operations working natively.

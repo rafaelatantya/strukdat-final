@@ -21,6 +21,13 @@ strukdat-final/
 │   ├── QueueSystem.cpp           # Queue system methods implementation
 │   ├── Benchmark.cpp             # Performance benchmark tools implementation
 │   └── main.cpp                  # Main CLI and JSON CLI runner
+├── web/                          # Web UI Application
+│   ├── backend/                  # Node.js Express server (spawns C++ executable)
+│   │   ├── server.js             # Server API endpoints and runner
+│   │   └── package.json          # Backend dependencies
+│   └── frontend/                 # React + Vite frontend dashboard
+│       ├── package.json          # Frontend dependencies
+│       └── src/                  # Styling and React view components
 ├── kode_uts/                     # Legacy UTS source code
 │   └── hospital_queue_system.cpp # Original single-file implementation
 └── Makefile                      # Compilation build rules
