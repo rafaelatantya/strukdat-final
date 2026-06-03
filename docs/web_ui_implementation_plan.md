@@ -63,7 +63,8 @@ The C++ executable will accept commands via the `--json` command-line argument. 
     "nama": "Ahmad Dani",
     "layanan": "Poli Penyakit Dalam",
     "prioritas": 2,
-    "waktuDatang": "10:30"
+    "waktuDatang": "10:30",
+    "tanggal": "2026-06-03"
   }
   ```
 * **Success Response:**
@@ -73,8 +74,14 @@ The C++ executable will accept commands via the `--json` command-line argument. 
     "message": "Pasien berhasil ditambahkan ke antrian.",
     "data": {
       "id": "P101",
+      "nama": "Ahmad Dani",
+      "layanan": "Poli Penyakit Dalam",
+      "prioritas": 2,
+      "prioritasLabel": "Mendesak",
       "nomorAntrian": 6,
-      "prioritasLabel": "Mendesak"
+      "waktuDatang": "10:30",
+      "tanggal": "2026-06-03",
+      "status": "Menunggu"
     }
   }
   ```
@@ -96,8 +103,10 @@ The C++ executable will accept commands via the `--json` command-line argument. 
       "nama": "Ahmad Dani",
       "layanan": "Poli Penyakit Dalam",
       "prioritas": 2,
+      "prioritasLabel": "Mendesak",
       "nomorAntrian": 6,
       "waktuDatang": "10:30",
+      "tanggal": "2026-06-03",
       "status": "Dipanggil"
     }
   }

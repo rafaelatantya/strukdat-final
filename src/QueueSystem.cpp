@@ -89,11 +89,12 @@ void SistemAntrianRS::tampilkanSatuPasien(const Patient& p) {
     cout << "Prioritas      : " << prioritasToString(p.prioritas) << endl;
     cout << "Nomor Antrian  : " << p.nomorAntrian << endl;
     cout << "Waktu Datang   : " << p.waktuDatang << endl;
+    cout << "Tanggal        : " << p.tanggal << endl;
     cout << "Status         : " << statusToString(p.status) << endl;
 }
 
-bool SistemAntrianRS::insertPatient(string id, string nama, string layanan, int prioritas, string waktuDatang, string& errorMsg) {
-    if (id.empty() || nama.empty() || layanan.empty() || waktuDatang.empty()) {
+bool SistemAntrianRS::insertPatient(string id, string nama, string layanan, int prioritas, string waktuDatang, string tanggal, string& errorMsg) {
+    if (id.empty() || nama.empty() || layanan.empty() || waktuDatang.empty() || tanggal.empty()) {
         errorMsg = "Data pasien tidak boleh ada yang kosong.";
         return false;
     }
@@ -115,6 +116,7 @@ bool SistemAntrianRS::insertPatient(string id, string nama, string layanan, int 
     p.prioritas = prioritas;
     p.nomorAntrian = nomorBerikutnya++;
     p.waktuDatang = waktuDatang;
+    p.tanggal = tanggal;
     p.status = MENUNGGU;
 
     antrian.push(p);
@@ -236,18 +238,50 @@ void SistemAntrianRS::tampilkanAntrianAktif() {
     cout << endl;
 }
 
+void SistemAntrianRS::tampilkanPasienSelesai() {
+    cout << "\n=== Pasien Selesai Layanan ===\n";
+    bool ada = false;
+    for (auto const& [key, p] : dataPasien) {
+        if (p.status == SELESAI) {
+            tampilkanSatuPasien(p);
+            cout << "-----------------------------\n";
+            ada = true;
+        }
+    }
+    if (!ada) {
+        cout << "Tidak ada pasien yang berstatus Selesai.\n";
+    }
+    cout << endl;
+}
+
+void SistemAntrianRS::tampilkanPasienBatal() {
+    cout << "\n=== Pasien Batal Layanan ===\n";
+    bool ada = false;
+    for (auto const& [key, p] : dataPasien) {
+        if (p.status == BATAL) {
+            tampilkanSatuPasien(p);
+            cout << "-----------------------------\n";
+            ada = true;
+        }
+    }
+    if (!ada) {
+        cout << "Tidak ada pasien yang dibatalkan.\n";
+    }
+    cout << endl;
+}
+
 void SistemAntrianRS::dummyData() {
     string errorMsg;
     if (dataPasien.find("P001") == dataPasien.end())
-        insertPatient("P001", "Andi", "Poli Umum", REGULER, "08:00", errorMsg);
+        insertPatient("P001", "Andi", "Poli Umum", REGULER, "08:00", "2026-06-03", errorMsg);
     if (dataPasien.find("P002") == dataPasien.end())
-        insertPatient("P002", "Budi", "Laboratorium", REGULER, "08:05", errorMsg);
+        insertPatient("P002", "Budi", "Laboratorium", REGULER, "08:05", "2026-06-03", errorMsg);
     if (dataPasien.find("P003") == dataPasien.end())
-        insertPatient("P003", "Citra", "UGD", DARURAT, "08:07", errorMsg);
+        insertPatient("P003", "Citra", "UGD", DARURAT, "08:07", "2026-06-03", errorMsg);
     if (dataPasien.find("P004") == dataPasien.end())
-        insertPatient("P004", "Dewi", "Poli Geriatri", PRIORITAS_RENTAN, "08:10", errorMsg);
+        insertPatient("P004", "Dewi", "Poli Geriatri", PRIORITAS_RENTAN, "08:10", "2026-06-03", errorMsg);
     if (dataPasien.find("P005") == dataPasien.end())
-        insertPatient("P005", "Eko", "Poli Penyakit Dalam", MENDESAK, "08:12", errorMsg);
+        insertPatient("P005", "Eko", "Poli Penyakit Dalam", MENDESAK, "08:12", "2026-06-03", errorMsg);
 }
 
 void SistemAntrianRS::saveToFile() {
@@ -265,6 +299,7 @@ void SistemAntrianRS::saveToFile() {
              << p.prioritas << "|"
              << p.nomorAntrian << "|"
              << p.waktuDatang << "|"
+             << p.tanggal << "|"
              << (int)p.status << endl;
     }
     file.close();
@@ -296,7 +331,7 @@ void SistemAntrianRS::loadFromFile() {
             data.push_back(token);
         }
 
-        if (data.size() == 7) {
+        if (data.size() == 8) {
             Patient p;
             p.id = data[0];
             p.nama = data[1];
@@ -304,6 +339,24 @@ void SistemAntrianRS::loadFromFile() {
             p.prioritas = stoi(data[3]);
             p.nomorAntrian = stoi(data[4]);
             p.waktuDatang = data[5];
+            p.tanggal = data[6];
+            p.status = (StatusLayanan)stoi(data[7]);
+
+            dataPasien[p.id] = p;
+
+            if (p.status == MENUNGGU) {
+                antrian.push(p);
+            }
+        }
+        else if (data.size() == 7) {
+            Patient p;
+            p.id = data[0];
+            p.nama = data[1];
+            p.layanan = data[2];
+            p.prioritas = stoi(data[3]);
+            p.nomorAntrian = stoi(data[4]);
+            p.waktuDatang = data[5];
+            p.tanggal = "2026-06-03"; // tanggal default
             p.status = (StatusLayanan)stoi(data[6]);
 
             dataPasien[p.id] = p;
@@ -327,11 +380,14 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
         string layanan = extractJsonValue(jsonInput, "layanan");
         string prioStr = extractJsonValue(jsonInput, "prioritas");
         string waktu = extractJsonValue(jsonInput, "waktuDatang");
+        string tanggal = extractJsonValue(jsonInput, "tanggal");
+
+        if (tanggal.empty()) tanggal = "2026-06-03";
 
         int prioritas = prioStr.empty() ? 4 : stoi(prioStr);
         string errorMsg;
 
-        if (insertPatient(id, nama, layanan, prioritas, waktu, errorMsg)) {
+        if (insertPatient(id, nama, layanan, prioritas, waktu, tanggal, errorMsg)) {
             out << "{\"status\":\"success\",\"message\":\"Pasien berhasil ditambahkan ke antrian.\",\"data\":{";
             out << "\"id\":\"" << id << "\",";
             out << "\"nama\":\"" << nama << "\",";
@@ -340,6 +396,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "\"prioritasLabel\":\"" << prioritasToString(prioritas) << "\",";
             out << "\"nomorAntrian\":" << (nomorBerikutnya - 1) << ",";
             out << "\"waktuDatang\":\"" << waktu << "\",";
+            out << "\"tanggal\":\"" << tanggal << "\",";
             out << "\"status\":\"" << statusToString(MENUNGGU) << "\"";
             out << "}}";
         } else {
@@ -358,6 +415,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "\"prioritasLabel\":\"" << prioritasToString(p.prioritas) << "\",";
             out << "\"nomorAntrian\":" << p.nomorAntrian << ",";
             out << "\"waktuDatang\":\"" << p.waktuDatang << "\",";
+            out << "\"tanggal\":\"" << p.tanggal << "\",";
             out << "\"status\":\"" << statusToString(p.status) << "\"";
             out << "}}";
         } else {
@@ -377,6 +435,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "\"prioritasLabel\":\"" << prioritasToString(p.prioritas) << "\",";
             out << "\"nomorAntrian\":" << p.nomorAntrian << ",";
             out << "\"waktuDatang\":\"" << p.waktuDatang << "\",";
+            out << "\"tanggal\":\"" << p.tanggal << "\",";
             out << "\"status\":\"" << statusToString(p.status) << "\"";
             out << "}}";
         } else {
@@ -422,6 +481,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "\"prioritasLabel\":\"" << prioritasToString(p.prioritas) << "\",";
             out << "\"nomorAntrian\":" << p.nomorAntrian << ",";
             out << "\"waktuDatang\":\"" << p.waktuDatang << "\",";
+            out << "\"tanggal\":\"" << p.tanggal << "\",";
             out << "\"status\":" << (int)p.status << ",";
             out << "\"statusLabel\":\"" << statusToString(p.status) << "\"";
             out << "}";

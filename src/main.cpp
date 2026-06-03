@@ -82,15 +82,17 @@ int main(int argc, char* argv[]) {
         cout << "4. Update status pasien\n";
         cout << "5. Batalkan antrian\n";
         cout << "6. Tampilkan semua data pasien\n";
-        cout << "7. Isi dummy data\n";
-        cout << "8. Tampilkan pasien menunggu\n";
-        cout << "9. Jalankan benchmark performa\n";
+        cout << "7. Tampilkan pasien menunggu\n";
+        cout << "8. Tampilkan pasien selesai pelayanan\n";
+        cout << "9. Tampilkan pasien batal pelayanan\n";
+        cout << "10. Isi dummy data\n";
+        cout << "11. Jalankan benchmark performa\n";
         cout << "0. Keluar\n";
         cout << "Pilih menu: ";
         pilihan = inputAngka();
 
         if (pilihan == 1) {
-            string id, nama, layanan, waktu;
+            string id, nama, layanan, waktu, tanggal;
             int prioritas;
 
             if (!inputStringDenganBatal("ID Pasien (0 untuk batal)        : ", id)) continue;
@@ -104,9 +106,10 @@ int main(int argc, char* argv[]) {
             }
 
             if (!inputStringDenganBatal("Waktu Kedatangan (0 untuk batal) : ", waktu)) continue;
+            if (!inputStringDenganBatal("Tanggal Appointment (0 untuk batal) : ", tanggal)) continue;
 
             string errorMsg;
-            if (sistem.insertPatient(id, nama, layanan, prioritas, waktu, errorMsg)) {
+            if (sistem.insertPatient(id, nama, layanan, prioritas, waktu, tanggal, errorMsg)) {
                 cout << "Pasien berhasil ditambahkan ke antrian.\n\n";
             } else {
                 cout << "Gagal: " << errorMsg << "\n\n";
@@ -170,13 +173,19 @@ int main(int argc, char* argv[]) {
             sistem.tampilkanSemuaData();
         }
         else if (pilihan == 7) {
+            sistem.tampilkanAntrianAktif();
+        }
+        else if (pilihan == 8) {
+            sistem.tampilkanPasienSelesai();
+        }
+        else if (pilihan == 9) {
+            sistem.tampilkanPasienBatal();
+        }
+        else if (pilihan == 10) {
             sistem.dummyData();
             cout << "Dummy data berhasil diproses.\n\n";
         }
-        else if (pilihan == 8) {
-            sistem.tampilkanAntrianAktif();
-        }
-        else if (pilihan == 9) {
+        else if (pilihan == 11) {
             int jumlah = inputAngkaDenganBatal("Masukkan jumlah data simulasi (-1 untuk batal): ");
             if (jumlah == -1) {
                 cout << "Input dibatalkan. Kembali ke menu utama.\n\n";

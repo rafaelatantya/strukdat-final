@@ -16,6 +16,7 @@ Every patient record must contain the following fields:
 | **Priority Level** | `int` | Range: `1` to `4` (1 is highest). | Category determining queue order. |
 | **Queue Number** | `int` | Auto-incrementing, unique. | Assigned sequentially upon registration. |
 | **Arrival Time** | `string` | Format: `HH:MM` (24-hour). | Time when patient checked in. |
+| **Tanggal Appointment** | `string` | Format: `YYYY-MM-DD`. | Scheduled date of visit. |
 | **Service Status** | `enum` | Values: `0` (Waiting), `1` (Called), `2` (Finished), `3` (Cancelled). | Current status of the patient in the workflow. |
 
 ---

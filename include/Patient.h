@@ -24,6 +24,7 @@ struct Patient {
     int prioritas;
     int nomorAntrian;
     std::string waktuDatang;
+    std::string tanggal;
     StatusLayanan status;
 };
 

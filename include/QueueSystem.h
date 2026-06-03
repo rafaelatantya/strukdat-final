@@ -34,7 +34,7 @@ public:
     void tampilkanSatuPasien(const Patient& p);
 
     // method utama sistem antrian
-    bool insertPatient(std::string id, std::string nama, std::string layanan, int prioritas, std::string waktuDatang, std::string& errorMsg);
+    bool insertPatient(std::string id, std::string nama, std::string layanan, int prioritas, std::string waktuDatang, std::string tanggal, std::string& errorMsg);
     bool panggilAntrianBerikutnya(Patient& outPatient, std::string& errorMsg);
     bool searchPatient(std::string id, Patient& outPatient, std::string& errorMsg);
     bool updateStatus(std::string id, int statusBaru, std::string& errorMsg);
@@ -42,6 +42,8 @@ public:
 
     void tampilkanSemuaData();
     void tampilkanAntrianAktif();
+    void tampilkanPasienSelesai();
+    void tampilkanPasienBatal();
     void dummyData();
 
     void saveToFile();
