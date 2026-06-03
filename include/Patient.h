@@ -14,7 +14,8 @@ enum StatusLayanan {
     MENUNGGU = 0,
     DIPANGGIL = 1,
     SELESAI = 2,
-    BATAL = 3
+    BATAL = 3,
+    TERJADWAL = 4
 };
 
 struct Patient {
@@ -24,6 +25,7 @@ struct Patient {
     int prioritas;
     int nomorAntrian;
     std::string waktuDatang;
+    std::string waktuDipanggil;
     std::string tanggal;
     StatusLayanan status;
 };
