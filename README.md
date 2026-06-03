@@ -1,12 +1,12 @@
 # 🏥 Sistem Antrian Rumah Sakit Terintegrasi (Hospital Queue System)
 
-Proyek ini adalah prototipe **Sistem Antrian Rumah Sakit** yang menggabungkan kecepatan pemrosesan data struktur data tingkat rendah menggunakan **Modular C++ Engine** dengan kemudahan pengelolaan operasional staf medis melalui **Web Admin Dashboard** berbasis **Node.js (Express)** dan **React (Vite)**.
+Program sistem antrian rumah sakit terintegrasi yang menggabungkan **Modular C++ Engine** (Priority Queue & Hash Table) dengan **Web Admin Dashboard** berbasis **Node.js (Express)** dan **React (Vite)**.
 
 ---
 
 ## 3. Desain Arsitektur Program
 
-Desain arsitektur program menggunakan arsitektur 5-Layer terintegrasi yang memisahkan antara Presentation (Web Client), API Gateway, Core Logic, In-Memory Data Structures, dan File Persistence Storage:
+Arsitektur 5-Layer terintegrasi:
 
 ![Desain Arsitektur Program](docs/architecture.png)
 
@@ -14,73 +14,107 @@ Desain arsitektur program menggunakan arsitektur 5-Layer terintegrasi yang memis
 
 ## ⚡ Fitur Utama
 
-1. **Sistem Antrian Skala Prioritas Medis (Priority Queue)**:
-   Pasien diurutkan berdasarkan prioritas kondisi kesehatannya:
-   * **Prioritas 1 (Darurat/Emergency)**: Korban kecelakaan, UGD, serangan jantung.
-   * **Prioritas 2 (Mendesak/Urgent)**: Nyeri hebat, demam sangat tinggi.
-   * **Prioritas 3 (Pasien Rentan)**: Lansia, ibu hamil, penyandang disabilitas.
-   * **Prioritas 4 (Reguler)**: Pemeriksaan umum, rawat jalan biasa.
+### Skala Prioritas Medis
+Urutan pelayanan pasien ditentukan oleh tingkat kegawatan medis berikut:
 
-2. **Logika Check-in Terjadwal (Stateless Booking)**:
-   Pasien yang melakukan booking janji temu secara online akan mendapat status `TERJADWAL` (Scheduled) dan tidak akan dimasukkan ke antrian aktif (heap) memori sebelum datang secara fisik untuk konfirmasi kedatangan (check-in) di loket loket.
+| Tingkat Prioritas | Kategori | Contoh Kasus |
+| :---: | :---: | :--- |
+| **1** | Darurat (Emergency) | UGD, kecelakaan, kondisi kritis mengancam nyawa. |
+| **2** | Mendesak (Urgent) | Nyeri hebat, demam sangat tinggi. |
+| **3** | Rentan (Vulnerable) | Lansia, ibu hamil, penyandang disabilitas. |
+| **4** | Reguler (Regular) | Pemeriksaan rutin, poli umum biasa. |
 
-3. **Pencatatan Waktu Panggil Otomatis (Called Time Timestamping)**:
-   Ketika dokter menekan tombol panggil pasien berikutnya (`call_next`), program C++ secara dinamis mencatat waktu panggil aktual menggunakan jam sistem lokal (system clock) dalam format `HH:MM`.
-
-4. **Persistensi Database File Lokal**:
-   Semua modifikasi data (`insert`, `check_in`, `call_next`, `update_status`, `delete`) secara reaktif disinkronisasikan langsung ke dalam file flat-file database lokal `data_pasien_rs.txt`.
-
-5. **Pengujian Analisis Performa (Benchmark Engine)**:
-   Membandingkan kecepatan eksekusi algoritma antrian prioritas berbasis **Min-Heap** dengan antrian standar berbasis **FIFO (First-In First-Out)** pada berbagai skala pengujian (100 hingga 50.000 records).
+### Operasional Utama
+* **Check-in Terjadwal**: Registrasi online (`TERJADWAL`) tidak masuk antrian aktif memori (heap) sebelum check-in fisik di loket menjadi `MENUNGGU`.
+* **Waktu Panggil Otomatis**: Jam panggil (`waktuDipanggil`) dicatat otomatis oleh system clock saat memanggil pasien (`call_next`).
+* **Persistensi File**: Data otomatis disinkronisasikan ke file flat-file `data_pasien_rs.txt`.
+* **Benchmark Performa**: Membandingkan kecepatan operasi Priority Queue (Min-Heap) vs Standard Queue (FIFO) secara realtime.
 
 ---
 
-## 🧬 Struktur Data yang Digunakan
+## 3.2 Struktur Data yang Digunakan
 
-* **Struct (`struct Patient`)**:
-  Digunakan untuk menampung record data pasien beserta seluruh atributnya di berkas [Patient.h](include/Patient.h).
-* **Priority Queue (`std::priority_queue`)**:
-  Struktur data berbasis **Min-Heap** di memori C++ yang mengurutkan pasien secara instan berdasarkan tingkat prioritas terkecil (1 tertinggi) dan nomor antrian terkecil jika prioritasnya sama.
-* **Hash Table (`std::unordered_map`)**:
-  Digunakan untuk melacak dan mencari data pasien di memori secara cepat $O(1)$ untuk keperluan update status atau pembatalan antrian secara acak menggunakan ID Pasien.
-* **Queue (`std::queue`)**:
-  Digunakan di dalam modul benchmark [Benchmark.cpp](src/Benchmark.cpp) sebagai struktur data antrian standar pembanding performa.
+### Struct
+Diimplementasikan sebagai representasi model data pasien pada [Patient.h](include/Patient.h).
+```cpp
+struct Patient {
+    std::string id;
+    std::string nama;
+    std::string layanan;
+    int prioritas;
+    int nomorAntrian;
+    std::string waktuDatang;
+    std::string waktuDipanggil;
+    std::string tanggal;
+    StatusLayanan status;
+};
+```
+
+### Queue
+Diimplementasikan sebagai pembanding antrian standar (FIFO) di [Benchmark.cpp](src/Benchmark.cpp).
+```cpp
+std::queue<Patient> q;
+```
+
+### Priority Queue
+Diimplementasikan sebagai heap pengurutan antrian aktif pasien di [QueueSystem.h](include/QueueSystem.h).
+```cpp
+std::priority_queue<Patient, std::vector<Patient>, ComparePatient> antrian;
+```
+
+### Hash Table
+Diimplementasikan sebagai pencarian instan O(1) untuk update status dan pencarian ID pasien di [QueueSystem.h](include/QueueSystem.h).
+```cpp
+std::unordered_map<std::string, Patient> dataPasien;
+```
 
 ---
 
 ## 🚀 Panduan Menjalankan Program
 
-### 1. Kompilasi Kode C++
-Kompilasi program C++ menggunakan `Makefile` di root folder proyek:
-```bash
-make clean && make
-```
+### A. Terminal Only
+Menjalankan program langsung menggunakan Command Line Interface (CLI).
 
-### 2. Jalankan Mode Terminal CLI (Menu Interaktif)
-Untuk menjalankan program menu interaktif berbasis teks langsung di terminal:
-```bash
-./hospital_queue
-```
+1. **Kompilasi Program**:
+   ```bash
+   make clean && make
+   ```
+2. **Jalankan Menu Interaktif**:
+   ```bash
+   ./hospital_queue
+   ```
+3. **Gunakan JSON CLI (Command-Line Mode)**:
+   ```bash
+   # Masukkan data dummy simulasi
+   ./hospital_queue --json '{"action":"dummy_data"}'
 
-### 3. Jalankan Mode Web UI Dashboard
-Aplikasi web dijalankan dalam arsitektur terpisah (Backend + Frontend):
+   # Baca seluruh antrian pasien
+   ./hospital_queue --json '{"action":"list_all"}'
 
-#### A. Jalankan API Backend (Express.js)
-Buka terminal baru:
-```bash
-cd web/backend
-npm install
-node server.js
-```
-*(Backend akan aktif di `http://localhost:5000`)*
+   # Panggil pasien berikutnya dari heap
+   ./hospital_queue --json '{"action":"call_next"}'
+   ```
 
-#### B. Jalankan Frontend (React + Vite)
-Buka terminal baru lagi:
-```bash
-cd web/frontend
-npm install
-npm run dev
-```
-*(Frontend akan aktif di `http://localhost:5173/`)*
+### B. Web App
+Menjalankan dashboard administratif terintegrasi berbasis browser.
 
-Buka browser Anda lalu kunjungi: **`http://localhost:5173/`**
+*Prasyarat: Pastikan C++ binary sudah di-compile (`make`).*
+
+1. **Jalankan API Backend (Express.js)**:
+   ```bash
+   cd web/backend
+   npm install
+   node server.js
+   ```
+   *(Backend berjalan di `http://localhost:5000`)*
+
+2. **Jalankan Dev Server Frontend (React + Vite)**:
+   ```bash
+   cd web/frontend
+   npm install
+   npm run dev
+   ```
+   *(Frontend berjalan di `http://localhost:5173/`)*
+
+3. **Akses Dashboard**:
+   Buka browser dan buka **`http://localhost:5173/`**.
