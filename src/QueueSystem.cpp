@@ -20,6 +20,29 @@ string getCurrentTimeStr() {
     return string(buffer);
 }
 
+// helper buat dapet tanggal sekarang format YYYY-MM-DD
+string getCurrentDateStr() {
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[80];
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d", timeinfo);
+    return string(buffer);
+}
+
+// helper buat dapet tanggal besok format YYYY-MM-DD
+string getTomorrowDateStr() {
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[80];
+    time(&rawtime);
+    rawtime += 24 * 3600; // tambah 1 hari
+    timeinfo = localtime(&rawtime);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d", timeinfo);
+    return string(buffer);
+}
+
 // potong spasi/kutip kiri kanan
 string SistemAntrianRS::trim(const string& str) {
     if (str.empty()) return str;
@@ -349,17 +372,42 @@ void SistemAntrianRS::tampilkanPasienTerjadwal() {
 }
 
 void SistemAntrianRS::dummyData() {
-    string errorMsg;
-    if (dataPasien.find("P001") == dataPasien.end())
-        insertPatient("P001", "Andi", "Poli Umum", REGULER, "08:00", "2026-06-03", errorMsg);
-    if (dataPasien.find("P002") == dataPasien.end())
-        insertPatient("P002", "Budi", "Laboratorium", REGULER, "08:05", "2026-06-03", errorMsg);
-    if (dataPasien.find("P003") == dataPasien.end())
-        insertPatient("P003", "Citra", "UGD", DARURAT, "08:07", "2026-06-03", errorMsg);
-    if (dataPasien.find("P004") == dataPasien.end())
-        insertPatient("P004", "Dewi", "Poli Geriatri", PRIORITAS_RENTAN, "08:10", "2026-06-03", errorMsg);
-    if (dataPasien.find("P005") == dataPasien.end())
-        insertPatient("P005", "Eko", "Poli Penyakit Dalam", MENDESAK, "08:12", "2026-06-03", errorMsg);
+    dataPasien.clear();
+    while (!antrian.empty()) {
+        antrian.pop();
+    }
+    
+    string today = getCurrentDateStr();
+    string tomorrow = getTomorrowDateStr();
+    
+    // Inisialisasi data pasien dengan semua kombinasi status dan prioritas secara adaptif
+    Patient p1 = {"P001", "Andi", "Poli Umum", REGULER, 1, "08:00", "08:15", today, SELESAI};
+    Patient p2 = {"P002", "Budi", "Laboratorium", REGULER, 2, "08:05", "-", today, MENUNGGU};
+    Patient p3 = {"P003", "Citra", "UGD", DARURAT, 3, "08:07", "08:10", today, DIPANGGIL};
+    Patient p4 = {"P004", "Dewi", "Poli Geriatri", PRIORITAS_RENTAN, 4, "08:10", "-", today, BATAL};
+    Patient p5 = {"P005", "Eko", "Poli Penyakit Dalam", MENDESAK, 5, "08:12", "-", today, MENUNGGU};
+    Patient p6 = {"P006", "Farhan", "Poli Gigi", REGULER, 6, "-", "-", today, TERJADWAL};
+    Patient p7 = {"P007", "Giska", "Poli Mata", PRIORITAS_RENTAN, 7, "-", "-", tomorrow, TERJADWAL};
+    Patient p8 = {"P008", "Hari", "UGD", DARURAT, 8, "08:20", "-", today, MENUNGGU};
+    Patient p9 = {"P009", "Irma", "Poli Anak", MENDESAK, 9, "-", "-", today, TERJADWAL};
+
+    dataPasien["P001"] = p1;
+    dataPasien["P002"] = p2;
+    dataPasien["P003"] = p3;
+    dataPasien["P004"] = p4;
+    dataPasien["P005"] = p5;
+    dataPasien["P006"] = p6;
+    dataPasien["P007"] = p7;
+    dataPasien["P008"] = p8;
+    dataPasien["P009"] = p9;
+
+    // Masukkan pasien MENUNGGU ke antrian aktif (priority queue)
+    antrian.push(p2);
+    antrian.push(p5);
+    antrian.push(p8);
+
+    nomorBerikutnya = 10;
+    saveToFile();
 }
 
 void SistemAntrianRS::saveToFile() {

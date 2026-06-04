@@ -12,7 +12,8 @@ strukdat-final/
 ├── docs/
 │   ├── file_desc.md              # [This File] Description of directory contents
 │   ├── system_rules_and_constraints.md # Domain logic, priorities, and system rules
-│   └── web_ui_implementation_plan.md # Architectural plan for Web UI integration (Option A)
+│   ├── ui_implementation.md          # Page-level UI spec and component breakdown
+│   └── DESIGN.md                     # Design system (typography, colors, spacing, components)
 ├── include/                      # C++ Header Files
 │   ├── Patient.h                 # Patient model, status enum, priority enum, and comparator
 │   ├── QueueSystem.h             # Queue management class declaration
@@ -37,7 +38,8 @@ strukdat-final/
 
 ### Configuration & Docs
 * **`docs/system_rules_and_constraints.md`**: Outlines business requirements for hospital queues, priority mappings (1 to 4), and status state machines.
-* **`docs/web_ui_implementation_plan.md`**: Explains how the web frontend communicates with the C++ executable via a Node.js wrapper using JSON CLI.
+* **`docs/ui_implementation.md`**: Page-level UI specification with element-by-element breakdowns for every view, component, and interaction.
+* **`docs/DESIGN.md`**: Design system document defining typography (Playfair Display + Inter), color tokens, spacing scale, component specs, and anti-patterns.
 * **`.agents/rules/agents.md`**: AI guidelines to restrict automatic Git commits/pushes.
 
 ### C++ Modular Backend (`include/` and `src/`)

@@ -10,6 +10,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Middleware untuk logging setiap request
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 // Path ke file eksekutabel C++ dan working directory
 const BINARY_PATH = path.resolve(__dirname, '../../hospital_queue');
 const WORK_DIR = path.resolve(__dirname, '../..');
