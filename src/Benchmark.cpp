@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <fstream>
+#include <sys/resource.h>
 #include "Benchmark.h"
 #include "Patient.h"
 
@@ -11,6 +12,8 @@ using namespace std;
 using namespace std::chrono;
 
 void runFullBenchmark(int scale, const string& outputFilePath) {
+    auto startTotal = high_resolution_clock::now();
+
     if (scale <= 0) {
         cerr << "Skala benchmark harus lebih dari 0.\n";
         return;
@@ -110,11 +113,22 @@ void runFullBenchmark(int scale, const string& outputFilePath) {
     cout << "   - Hash Table Search O(1): " << hashSearchUs << " us\n";
     cout << "   - Linear Search O(N)    : " << linearSearchUs << " us\n\n";
 
+    auto endTotal = high_resolution_clock::now();
+    long long totalTimeMs = duration_cast<milliseconds>(endTotal - startTotal).count();
+
+    double memoryUsageMB = 0.0;
+    struct rusage usage;
+    if (getrusage(RUSAGE_SELF, &usage) == 0) {
+        memoryUsageMB = usage.ru_maxrss / 1024.0;
+    }
+
     // simpan hasilnya ke file json
     ofstream file(outputFilePath.c_str());
     if (file.is_open()) {
         file << "{\n";
         file << "  \"scale\": " << scale << ",\n";
+        file << "  \"totalTimeMs\": " << totalTimeMs << ",\n";
+        file << "  \"memoryUsageMB\": " << memoryUsageMB << ",\n";
         file << "  \"priority_queue\": {\n";
         file << "    \"insert_time_us\": " << pqInsertUs << ",\n";
         file << "    \"call_next_time_us\": " << pqCallUs << ",\n";
