@@ -1,10 +1,46 @@
 #include <iostream>
 #include <string>
 #include <limits>
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
 #include "QueueSystem.h"
 #include "Benchmark.h"
 
 using namespace std;
+
+void clearScreen() {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+void pauseLanjut() {
+    cout << "\nTekan Enter untuk kembali ke menu utama...";
+    string dummy;
+    getline(cin, dummy);
+}
+
+string extractBenchmarkValue(const string& json, const string& key) {
+    size_t keyPos = json.find("\"" + key + "\"");
+    if (keyPos == string::npos) return "";
+    size_t colonPos = json.find(":", keyPos);
+    if (colonPos == string::npos) return "";
+    size_t valStart = colonPos + 1;
+    while (valStart < json.length() && (json[valStart] == ' ' || json[valStart] == '	')) valStart++;
+    if (json[valStart] == '"') {
+        size_t valEnd = json.find("\"", valStart + 1);
+        if (valEnd == string::npos) return "";
+        return json.substr(valStart + 1, valEnd - valStart - 1);
+    } else {
+        size_t valEnd = valStart;
+        while (valEnd < json.length() && json[valEnd] != ',' && json[valEnd] != '}') valEnd++;
+        return json.substr(valStart, valEnd - valStart);
+    }
+}
+
 
 int inputAngka() {
     int x;
@@ -37,7 +73,7 @@ int inputAngkaDenganBatal(const string& prompt) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             cout << "Input harus angka.\n";
-            continue;
+            { pauseLanjut(); continue; }
         }
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
         return x;
@@ -73,23 +109,25 @@ int main(int argc, char* argv[]) {
     // jalanin menu interaktif di terminal
     int pilihan;
     do {
-        cout << "=====================================\n";
-        cout << " SISTEM ANTRIAN RUMAH SAKIT (MODULAR)\n";
-        cout << "=====================================\n";
-        cout << "1. Registrasi Pasien Baru (Walk-in / Booking)\n";
-        cout << "2. Check-in Pasien Terjadwal\n";
-        cout << "3. Panggil Antrian Berikutnya\n";
-        cout << "4. Cari Data Pasien\n";
-        cout << "5. Update Status Pasien secara Manual\n";
-        cout << "6. Batalkan Antrian Pasien\n";
-        cout << "7. Tampilkan Semua Data Pasien\n";
-        cout << "8. Tampilkan Pasien Mengantri (Menunggu)\n";
-        cout << "9. Tampilkan Pasien Selesai Pelayanan\n";
-        cout << "10. Tampilkan Pasien Batal Pelayanan\n";
-        cout << "11. Tampilkan Pasien Terjadwal (Belum Check-in)\n";
-        cout << "12. Isi Dummy Data Awal\n";
-        cout << "13. Jalankan Benchmark Performa\n";
-        cout << "0. Keluar\n";
+        clearScreen();
+        cout << "+---------------------------------------------------+\n";
+        cout << "|        SISTEM ANTRIAN RUMAH SAKIT (MODULAR)       |\n";
+        cout << "+---------------------------------------------------+\n";
+        cout << "| 1. Registrasi Pasien Baru (Walk-in / Booking)     |\n";
+        cout << "| 2. Check-in Pasien Terjadwal                      |\n";
+        cout << "| 3. Panggil Antrian Berikutnya                     |\n";
+        cout << "| 4. Cari Data Pasien                               |\n";
+        cout << "| 5. Update Status Pasien secara Manual             |\n";
+        cout << "| 6. Batalkan Antrian Pasien                        |\n";
+        cout << "| 7. Tampilkan Semua Data Pasien                    |\n";
+        cout << "| 8. Tampilkan Pasien Mengantri (Menunggu)          |\n";
+        cout << "| 9. Tampilkan Pasien Selesai Pelayanan             |\n";
+        cout << "| 10. Tampilkan Pasien Batal Pelayanan              |\n";
+        cout << "| 11. Tampilkan Pasien Terjadwal (Belum Check-in)   |\n";
+        cout << "| 12. Isi Dummy Data Awal                           |\n";
+        cout << "| 13. Jalankan Benchmark Performa                   |\n";
+        cout << "| 0. Keluar                                         |\n";
+        cout << "+---------------------------------------------------+\n";
         cout << "Pilih menu: ";
         pilihan = inputAngka();
 
@@ -97,18 +135,18 @@ int main(int argc, char* argv[]) {
             string id, nama, layanan, waktu, tanggal;
             int prioritas;
 
-            if (!inputStringDenganBatal("ID Pasien (0 untuk batal)                : ", id)) continue;
-            if (!inputStringDenganBatal("Nama Pasien (0 untuk batal)              : ", nama)) continue;
-            if (!inputStringDenganBatal("Jenis Layanan (0 untuk batal)            : ", layanan)) continue;
+            if (!inputStringDenganBatal("ID Pasien (0 untuk batal)                : ", id)) { pauseLanjut(); continue; }
+            if (!inputStringDenganBatal("Nama Pasien (0 untuk batal)              : ", nama)) { pauseLanjut(); continue; }
+            if (!inputStringDenganBatal("Jenis Layanan (0 untuk batal)            : ", layanan)) { pauseLanjut(); continue; }
 
             prioritas = inputAngkaDenganBatal("Prioritas (1=Darurat, 2=Mendesak, 3=Prioritas Rentan, 4=Reguler, -1 untuk batal): ");
             if (prioritas == -1) {
                 cout << "Input dibatalkan. Kembali ke menu utama.\n\n";
-                continue;
+                { pauseLanjut(); continue; }
             }
 
-            if (!inputStringDenganBatal("Waktu Datang (0=batal, - jika booking)   : ", waktu)) continue;
-            if (!inputStringDenganBatal("Tanggal Appointment (0 untuk batal)     : ", tanggal)) continue;
+            if (!inputStringDenganBatal("Waktu Datang (0=batal, - jika booking)   : ", waktu)) { pauseLanjut(); continue; }
+            if (!inputStringDenganBatal("Tanggal Appointment (0 untuk batal)     : ", tanggal)) { pauseLanjut(); continue; }
 
             string errorMsg;
             if (sistem.insertPatient(id, nama, layanan, prioritas, waktu, tanggal, errorMsg)) {
@@ -119,8 +157,8 @@ int main(int argc, char* argv[]) {
         }
         else if (pilihan == 2) {
             string id, waktu;
-            if (!inputStringDenganBatal("Masukkan ID pasien (0 untuk batal): ", id)) continue;
-            if (!inputStringDenganBatal("Waktu Check-in (0=batal, - jika otomatis jam sekarang): ", waktu)) continue;
+            if (!inputStringDenganBatal("Masukkan ID pasien (0 untuk batal): ", id)) { pauseLanjut(); continue; }
+            if (!inputStringDenganBatal("Waktu Check-in (0=batal, - jika otomatis jam sekarang): ", waktu)) { pauseLanjut(); continue; }
 
             string errorMsg;
             if (sistem.checkInPatient(id, waktu, errorMsg)) {
@@ -142,7 +180,7 @@ int main(int argc, char* argv[]) {
         }
         else if (pilihan == 4) {
             string id;
-            if (!inputStringDenganBatal("Masukkan ID pasien (0 untuk batal): ", id)) continue;
+            if (!inputStringDenganBatal("Masukkan ID pasien (0 untuk batal): ", id)) { pauseLanjut(); continue; }
             Patient p;
             string errorMsg;
             if (sistem.searchPatient(id, p, errorMsg)) {
@@ -155,7 +193,7 @@ int main(int argc, char* argv[]) {
         }
         else if (pilihan == 5) {
             string id;
-            if (!inputStringDenganBatal("Masukkan ID pasien (0 untuk batal): ", id)) continue;
+            if (!inputStringDenganBatal("Masukkan ID pasien (0 untuk batal): ", id)) { pauseLanjut(); continue; }
 
             int statusBaru = inputAngkaDenganBatal(
                 "Status baru (0=Menunggu, 1=Dipanggil, 2=Selesai, 3=Batal, 4=Terjadwal, -1 untuk batal): "
@@ -163,7 +201,7 @@ int main(int argc, char* argv[]) {
 
             if (statusBaru == -1) {
                 cout << "Input dibatalkan. Kembali ke menu utama.\n\n";
-                continue;
+                { pauseLanjut(); continue; }
             }
 
             string errorMsg;
@@ -175,7 +213,7 @@ int main(int argc, char* argv[]) {
         }
         else if (pilihan == 6) {
             string id;
-            if (!inputStringDenganBatal("Masukkan ID pasien yang dibatalkan (0 untuk batal): ", id)) continue;
+            if (!inputStringDenganBatal("Masukkan ID pasien yang dibatalkan (0 untuk batal): ", id)) { pauseLanjut(); continue; }
             string errorMsg;
             if (sistem.deleteAntrian(id, errorMsg)) {
                 cout << "Pasien dibatalkan dari antrian.\n\n";
@@ -205,10 +243,24 @@ int main(int argc, char* argv[]) {
         else if (pilihan == 13) {
             int jumlah = inputAngkaDenganBatal("Masukkan jumlah data simulasi (-1 untuk batal): ");
             if (jumlah == -1) {
-                cout << "Input dibatalkan. Kembali ke menu utama.\n\n";
-                continue;
+                cout << "Input dibatalkan.\n";
+                { pauseLanjut(); continue; }
             }
             runFullBenchmark(jumlah, "benchmark_results.json");
+            
+            ifstream file("benchmark_results.json");
+            if (file.is_open()) {
+                stringstream buffer;
+                buffer << file.rdbuf();
+                string jsonStr = buffer.str();
+                file.close();
+
+                cout << "\n=== Hasil Benchmark ===\n";
+                cout << "Skala (Jumlah Data) : " << extractBenchmarkValue(jsonStr, "scale") << "\n";
+                cout << "Waktu Eksekusi      : " << extractBenchmarkValue(jsonStr, "totalTimeMs") << " ms\n";
+                cout << "Penggunaan Memori   : " << extractBenchmarkValue(jsonStr, "memoryUsageMB") << " MB\n";
+                cout << "=======================\n";
+            }
         }
         else if (pilihan == 0) {
             cout << "Program selesai.\n";
@@ -216,7 +268,9 @@ int main(int argc, char* argv[]) {
         else {
             cout << "Pilihan tidak valid.\n\n";
         }
-
+        if (pilihan != 0) {
+            pauseLanjut();
+        }
     } while (pilihan != 0);
 
     return 0;

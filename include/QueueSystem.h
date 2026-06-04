@@ -32,6 +32,7 @@ public:
     std::string statusToString(StatusLayanan s);
 
     void tampilkanSatuPasien(const Patient& p);
+    void tampilkanTabelPasien(const std::vector<Patient>& listPasien);
 
     // method utama sistem antrian
     bool insertPatient(std::string id, std::string nama, std::string layanan, int prioritas, std::string waktuDatang, std::string tanggal, std::string& errorMsg);

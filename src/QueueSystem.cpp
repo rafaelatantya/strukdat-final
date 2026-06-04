@@ -131,6 +131,40 @@ void SistemAntrianRS::tampilkanSatuPasien(const Patient& p) {
     cout << "Status         : " << statusToString(p.status) << endl;
 }
 
+void SistemAntrianRS::tampilkanTabelPasien(const vector<Patient>& listPasien) {
+    if (listPasien.empty()) {
+        cout << "Tidak ada data pasien yang sesuai.\n";
+        return;
+    }
+
+    // copy vector biar bisa disort
+    vector<Patient> sortedList = listPasien;
+    sort(sortedList.begin(), sortedList.end(), [](const Patient& a, const Patient& b) {
+        return a.id < b.id; // Urutkan berdasarkan ID
+    });
+    
+    cout << "+------+----------------------+----------------------+------------------+------------------+--------+--------------+\n";
+    cout << "| " << left << setw(4) << "ID"
+         << " | " << setw(20) << "Nama Pasien"
+         << " | " << setw(20) << "Layanan"
+         << " | " << setw(16) << "Prioritas"
+         << " | " << setw(16) << "Status"
+         << " | " << setw(6) << "Datang"
+         << " | " << setw(12) << "Tanggal" << " |\n";
+    cout << "+------+----------------------+----------------------+------------------+------------------+--------+--------------+\n";
+
+    for (const auto& p : sortedList) {
+        cout << "| " << left << setw(4) << p.id
+             << " | " << setw(20) << p.nama.substr(0, 20)
+             << " | " << setw(20) << p.layanan.substr(0, 20)
+             << " | " << setw(16) << prioritasToString(p.prioritas).substr(0, 16)
+             << " | " << setw(16) << statusToString(p.status).substr(0, 16)
+             << " | " << setw(6) << p.waktuDatang
+             << " | " << setw(12) << p.tanggal.substr(0, 12) << " |\n";
+    }
+    cout << "+------+----------------------+----------------------+------------------+------------------+--------+--------------+\n";
+}
+
 bool SistemAntrianRS::insertPatient(string id, string nama, string layanan, int prioritas, string waktuDatang, string tanggal, string& errorMsg) {
     if (id.empty() || nama.empty() || layanan.empty() || tanggal.empty()) {
         errorMsg = "Data pasien tidak boleh ada yang kosong.";
@@ -296,78 +330,51 @@ bool SistemAntrianRS::deleteAntrian(string id, string& errorMsg) {
 
 void SistemAntrianRS::tampilkanSemuaData() {
     cout << "\n=== Seluruh Data Pasien ===\n";
-    if (dataPasien.empty()) {
-        cout << "Belum ada data pasien.\n\n";
-        return;
-    }
+    vector<Patient> listPasien;
     for (auto const& [key, p] : dataPasien) {
-        tampilkanSatuPasien(p);
-        cout << "-----------------------------\n";
+        listPasien.push_back(p);
     }
+    tampilkanTabelPasien(listPasien);
     cout << endl;
 }
 
 void SistemAntrianRS::tampilkanAntrianAktif() {
     cout << "\n=== Pasien Menunggu ===\n";
-    bool ada = false;
+    vector<Patient> listPasien;
     for (auto const& [key, p] : dataPasien) {
-        if (p.status == MENUNGGU) {
-            tampilkanSatuPasien(p);
-            cout << "-----------------------------\n";
-            ada = true;
-        }
+        if (p.status == MENUNGGU) listPasien.push_back(p);
     }
-    if (!ada) {
-        cout << "Tidak ada pasien yang sedang menunggu.\n";
-    }
+    tampilkanTabelPasien(listPasien);
     cout << endl;
 }
 
 void SistemAntrianRS::tampilkanPasienSelesai() {
     cout << "\n=== Pasien Selesai Layanan ===\n";
-    bool ada = false;
+    vector<Patient> listPasien;
     for (auto const& [key, p] : dataPasien) {
-        if (p.status == SELESAI) {
-            tampilkanSatuPasien(p);
-            cout << "-----------------------------\n";
-            ada = true;
-        }
+        if (p.status == SELESAI) listPasien.push_back(p);
     }
-    if (!ada) {
-        cout << "Tidak ada pasien yang berstatus Selesai.\n";
-    }
+    tampilkanTabelPasien(listPasien);
     cout << endl;
 }
 
 void SistemAntrianRS::tampilkanPasienBatal() {
     cout << "\n=== Pasien Batal Layanan ===\n";
-    bool ada = false;
+    vector<Patient> listPasien;
     for (auto const& [key, p] : dataPasien) {
-        if (p.status == BATAL) {
-            tampilkanSatuPasien(p);
-            cout << "-----------------------------\n";
-            ada = true;
-        }
+        if (p.status == BATAL) listPasien.push_back(p);
     }
-    if (!ada) {
-        cout << "Tidak ada pasien yang dibatalkan.\n";
-    }
+    tampilkanTabelPasien(listPasien);
     cout << endl;
 }
 
 void SistemAntrianRS::tampilkanPasienTerjadwal() {
     cout << "\n=== Pasien Terjadwal (Belum Check-in) ===\n";
-    bool ada = false;
+    vector<Patient> listPasien;
     for (auto const& [key, p] : dataPasien) {
-        if (p.status == TERJADWAL) {
-            tampilkanSatuPasien(p);
-            cout << "-----------------------------\n";
-            ada = true;
-        }
+        if (p.status == TERJADWAL) listPasien.push_back(p);
     }
-    if (!ada) {
-        cout << "Tidak ada pasien terjadwal.\n";
-    }
+    tampilkanTabelPasien(listPasien);
     cout << endl;
 }
 
