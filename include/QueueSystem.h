@@ -14,6 +14,7 @@ private:
     int nomorBerikutnya;
     std::string namaFileData;
     std::string namaFileBenchmark;
+    bool isInteractiveMode;
 
     // helper parsing json tipis-tipis
     std::string trim(const std::string& str);
@@ -24,6 +25,8 @@ public:
         std::string fileData = "data_pasien_rs.txt",
         std::string fileBenchmark = "benchmark_minggu7.txt"
     );
+
+    void setInteractiveMode(bool mode);
 
     bool prioritasValid(int p);
     bool statusValid(int s);

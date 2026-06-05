@@ -43,6 +43,49 @@ string getTomorrowDateStr() {
     return string(buffer);
 }
 
+// helper untuk membandingkan pasien untuk tampilan tabel/list
+bool comparePatientsForDisplay(const Patient& a, const Patient& b) {
+    // 1. Urutkan berdasarkan kelompok status: DIPANGGIL -> MENUNGGU -> TERJADWAL -> SELESAI -> BATAL
+    auto getStatusRank = [](StatusLayanan s) {
+        if (s == DIPANGGIL) return 0;
+        if (s == MENUNGGU) return 1;
+        if (s == TERJADWAL) return 2;
+        if (s == SELESAI) return 3;
+        return 4; // BATAL
+    };
+    
+    int rankA = getStatusRank(a.status);
+    int rankB = getStatusRank(b.status);
+    if (rankA != rankB) {
+        return rankA < rankB;
+    }
+    
+    // 2. Jika status sama:
+    if (a.status == MENUNGGU || a.status == DIPANGGIL) {
+        // Urutkan berdasarkan prioritas (1 = Darurat s.d. 4 = Reguler)
+        if (a.prioritas != b.prioritas) {
+            return a.prioritas < b.prioritas;
+        }
+        // Jika prioritas sama, urutkan berdasarkan nomor antrian (FIFO)
+        return a.nomorAntrian < b.nomorAntrian;
+    }
+    else if (a.status == TERJADWAL) {
+        // Urutkan berdasarkan tanggal booking
+        if (a.tanggal != b.tanggal) {
+            return a.tanggal < b.tanggal;
+        }
+        // Jika tanggal sama, urutkan berdasarkan ID
+        return a.id < b.id;
+    }
+    else {
+        // SELESAI atau BATAL: urutkan berdasarkan tanggal, lalu nomor antrian
+        if (a.tanggal != b.tanggal) {
+            return a.tanggal < b.tanggal;
+        }
+        return a.nomorAntrian < b.nomorAntrian;
+    }
+}
+
 // potong spasi/kutip kiri kanan
 string SistemAntrianRS::trim(const string& str) {
     if (str.empty()) return str;
@@ -87,7 +130,12 @@ SistemAntrianRS::SistemAntrianRS(string fileData, string fileBenchmark) {
     nomorBerikutnya = 1;
     namaFileData = fileData;
     namaFileBenchmark = fileBenchmark;
+    isInteractiveMode = true;
     loadFromFile();
+}
+
+void SistemAntrianRS::setInteractiveMode(bool mode) {
+    isInteractiveMode = mode;
 }
 
 bool SistemAntrianRS::prioritasValid(int p) {
@@ -139,9 +187,7 @@ void SistemAntrianRS::tampilkanTabelPasien(const vector<Patient>& listPasien) {
 
     // copy vector biar bisa disort
     vector<Patient> sortedList = listPasien;
-    sort(sortedList.begin(), sortedList.end(), [](const Patient& a, const Patient& b) {
-        return a.id < b.id; // Urutkan berdasarkan ID
-    });
+    sort(sortedList.begin(), sortedList.end(), comparePatientsForDisplay);
     
     cout << "+------+----------------------+----------------------+------------------+------------------+--------+--------------+\n";
     cout << "| " << left << setw(4) << "ID"
@@ -202,6 +248,16 @@ bool SistemAntrianRS::insertPatient(string id, string nama, string layanan, int 
     dataPasien[id] = p;
     saveToFile();
 
+    if (isInteractiveMode) {
+        cout << "\n>>> [REGISTRASI] Pasien baru berhasil didaftarkan:\n";
+        cout << "    ID: " << p.id << " | Nama: " << p.nama << " | Layanan: " << p.layanan << "\n";
+        if (p.status == TERJADWAL) {
+            cout << "    Status: TERJADWAL (Booking untuk tanggal: " << p.tanggal << ")\n";
+        } else {
+            cout << "    Status: MENUNGGU (Masuk antrian aktif dengan Prioritas: " << prioritasToString(p.prioritas) << ", No. Antrian: #" << p.nomorAntrian << ")\n";
+        }
+    }
+
     return true;
 }
 
@@ -226,6 +282,14 @@ bool SistemAntrianRS::checkInPatient(string id, string waktuDatang, string& erro
 
     antrian.push(it->second);
     saveToFile();
+
+    if (isInteractiveMode) {
+        cout << "\n>>> [CHECK-IN] Pasien check-in fisik berhasil:\n";
+        cout << "    ID: " << it->second.id << " | Nama: " << it->second.nama << "\n";
+        cout << "    Status berubah: TERJADWAL -> MENUNGGU (Masuk Antrian Aktif)\n";
+        cout << "    Prioritas: " << prioritasToString(it->second.prioritas) << " | No. Antrian: #" << it->second.nomorAntrian << "\n";
+    }
+
     return true;
 }
 
@@ -240,6 +304,14 @@ bool SistemAntrianRS::panggilAntrianBerikutnya(Patient& outPatient, string& erro
             dataPasien[p.id].waktuDipanggil = getCurrentTimeStr();
             saveToFile();
             outPatient = dataPasien[p.id];
+
+            if (isInteractiveMode) {
+                cout << "\n>>> [PANGGIL ANTRIAN] Memanggil pasien berikutnya:\n";
+                cout << "    ID: " << outPatient.id << " | Nama: " << outPatient.nama << "\n";
+                cout << "    Status berubah: MENUNGGU -> DIPANGGIL\n";
+                cout << "    Prioritas: " << prioritasToString(outPatient.prioritas) << " | No. Antrian: #" << outPatient.nomorAntrian << "\n";
+            }
+
             return true;
         }
     }
@@ -276,16 +348,30 @@ bool SistemAntrianRS::updateStatus(string id, int statusBaru, string& errorMsg) 
         it->second.status = DIPANGGIL;
         it->second.waktuDipanggil = getCurrentTimeStr();
         saveToFile();
+        if (isInteractiveMode) {
+            cout << "\n>>> [UPDATE STATUS] Pasien " << id << " (" << it->second.nama << ") dipanggil.\n";
+            cout << "    Status berubah: MENUNGGU -> DIPANGGIL\n";
+        }
         return true;
     }
     else if (statusSekarang == DIPANGGIL && statusTujuan == SELESAI) {
         it->second.status = SELESAI;
         saveToFile();
+        if (isInteractiveMode) {
+            cout << "\n>>> [UPDATE STATUS] Pelayanan pasien selesai:\n";
+            cout << "    ID: " << id << " | Nama: " << it->second.nama << "\n";
+            cout << "    Status berubah: DIPANGGIL -> SELESAI\n";
+        }
         return true;
     }
     else if (statusSekarang == MENUNGGU && statusTujuan == BATAL) {
         it->second.status = BATAL;
         saveToFile();
+        if (isInteractiveMode) {
+            cout << "\n>>> [BATAL ANTRIAN] Antrian pasien dibatalkan:\n";
+            cout << "    ID: " << id << " | Nama: " << it->second.nama << "\n";
+            cout << "    Status berubah: MENUNGGU -> BATAL\n";
+        }
         return true;
     }
     else if (statusSekarang == TERJADWAL && statusTujuan == MENUNGGU) {
@@ -293,11 +379,22 @@ bool SistemAntrianRS::updateStatus(string id, int statusBaru, string& errorMsg) 
         it->second.waktuDatang = getCurrentTimeStr();
         antrian.push(it->second);
         saveToFile();
+        if (isInteractiveMode) {
+            cout << "\n>>> [CHECK-IN] Pasien check-in fisik berhasil:\n";
+            cout << "    ID: " << id << " | Nama: " << it->second.nama << "\n";
+            cout << "    Status berubah: TERJADWAL -> MENUNGGU (Masuk Antrian Aktif)\n";
+            cout << "    Prioritas: " << prioritasToString(it->second.prioritas) << " | No. Antrian: #" << it->second.nomorAntrian << "\n";
+        }
         return true;
     }
     else if (statusSekarang == TERJADWAL && statusTujuan == BATAL) {
         it->second.status = BATAL;
         saveToFile();
+        if (isInteractiveMode) {
+            cout << "\n>>> [BATAL ANTRIAN] Booking pasien dibatalkan:\n";
+            cout << "    ID: " << id << " | Nama: " << it->second.nama << "\n";
+            cout << "    Status berubah: TERJADWAL -> BATAL\n";
+        }
         return true;
     }
     else {
@@ -325,6 +422,13 @@ bool SistemAntrianRS::deleteAntrian(string id, string& errorMsg) {
 
     it->second.status = BATAL;
     saveToFile();
+
+    if (isInteractiveMode) {
+        cout << "\n>>> [BATAL ANTRIAN] Antrian pasien dibatalkan:\n";
+        cout << "    ID: " << id << " | Nama: " << it->second.nama << "\n";
+        cout << "    Status berubah: MENUNGGU -> BATAL\n";
+    }
+
     return true;
 }
 
@@ -646,15 +750,23 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
         }
     }
     else if (action == "list_all" || action == "list_waiting" || action == "list_scheduled") {
-        out << "{\"status\":\"success\",\"data\":[";
-        bool first = true;
+        vector<Patient> listPasien;
         for (auto const& [key, p] : dataPasien) {
-            if (action == "list_waiting" && p.status != MENUNGGU) {
+            if (action == "list_waiting" && p.status != MENUNGGU && p.status != DIPANGGIL) {
                 continue;
             }
             if (action == "list_scheduled" && p.status != TERJADWAL) {
                 continue;
             }
+            listPasien.push_back(p);
+        }
+
+        // Urutkan list sesuai aturan prioritas
+        sort(listPasien.begin(), listPasien.end(), comparePatientsForDisplay);
+
+        out << "{\"status\":\"success\",\"data\":[";
+        bool first = true;
+        for (const auto& p : listPasien) {
             if (!first) out << ",";
             first = false;
             out << "{";
