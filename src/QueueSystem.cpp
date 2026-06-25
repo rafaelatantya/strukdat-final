@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <ctime>
 #include <iomanip>
+#include <regex>
 #include "QueueSystem.h"
 
 using namespace std;
@@ -126,6 +127,17 @@ string SistemAntrianRS::extractJsonValue(const string& json, const string& key) 
     }
 }
 
+bool SistemAntrianRS::isValidDate(const string& date) {
+    regex pattern("^\\d{4}-\\d{2}-\\d{2}$");
+    return regex_match(date, pattern);
+}
+
+bool SistemAntrianRS::isValidTime(const string& timeStr) {
+    if (timeStr == "-") return true;
+    regex pattern("^([01]\\d|2[0-3]):([0-5]\\d)$");
+    return regex_match(timeStr, pattern);
+}
+
 SistemAntrianRS::SistemAntrianRS(string fileData, string fileBenchmark) {
     nomorBerikutnya = 1;
     namaFileData = fileData;
@@ -217,6 +229,16 @@ bool SistemAntrianRS::insertPatient(string id, string nama, string layanan, int 
         return false;
     }
 
+    if (!isValidDate(tanggal)) {
+        errorMsg = "Format tanggal tidak valid (harus YYYY-MM-DD).";
+        return false;
+    }
+
+    if (!waktuDatang.empty() && waktuDatang != "-" && !isValidTime(waktuDatang)) {
+        errorMsg = "Format waktu datang tidak valid (harus HH:MM atau -).";
+        return false;
+    }
+
     if (!prioritasValid(prioritas)) {
         errorMsg = "Prioritas tidak valid (harus 1-4).";
         return false;
@@ -265,6 +287,11 @@ bool SistemAntrianRS::checkInPatient(string id, string waktuDatang, string& erro
     auto it = dataPasien.find(id);
     if (it == dataPasien.end()) {
         errorMsg = "Pasien tidak ditemukan.";
+        return false;
+    }
+
+    if (!waktuDatang.empty() && waktuDatang != "-" && !isValidTime(waktuDatang)) {
+        errorMsg = "Format waktu datang tidak valid (harus HH:MM atau -).";
         return false;
     }
 

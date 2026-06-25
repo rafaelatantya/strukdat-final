@@ -86,6 +86,26 @@ app.post('/api/patients', async (req, res) => {
       message: 'ID, nama, layanan, prioritas, dan tanggal wajib diisi.'
     });
   }
+
+  // Validasi format tanggal YYYY-MM-DD
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(tanggal)) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Format tanggal tidak valid. Harus menggunakan format YYYY-MM-DD.'
+    });
+  }
+
+  // Validasi format waktuDatang HH:MM atau -
+  const wd = waktuDatang || '-';
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (wd !== '-' && !timeRegex.test(wd)) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Format waktu tidak valid. Harus menggunakan format HH:MM (24 jam) atau -.'
+    });
+  }
+
   try {
     const result = await runCppCommand({
       action: 'insert',
@@ -93,7 +113,7 @@ app.post('/api/patients', async (req, res) => {
       nama,
       layanan,
       prioritas: parseInt(prioritas, 10),
-      waktuDatang: waktuDatang || '-',
+      waktuDatang: wd,
       tanggal
     });
     res.json(result);
@@ -111,6 +131,16 @@ app.post('/api/checkin', async (req, res) => {
       message: 'ID dan waktuDatang wajib diisi.'
     });
   }
+
+  // Validasi format waktuDatang HH:MM atau -
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  if (waktuDatang !== '-' && !timeRegex.test(waktuDatang)) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Format waktu tidak valid. Harus menggunakan format HH:MM (24 jam) atau -.'
+    });
+  }
+
   try {
     const result = await runCppCommand({
       action: 'check_in',

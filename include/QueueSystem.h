@@ -20,6 +20,10 @@ private:
     std::string trim(const std::string& str);
     std::string extractJsonValue(const std::string& json, const std::string& key);
 
+    // helper validasi format tanggal & waktu
+    bool isValidDate(const std::string& date);
+    bool isValidTime(const std::string& time);
+
 public:
     SistemAntrianRS(
         std::string fileData = "data_pasien_rs.txt",
