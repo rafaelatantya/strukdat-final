@@ -23,7 +23,7 @@ struct Patient {
     std::string nama;
     std::string layanan;
     int prioritas;
-    int nomorAntrian;
+    std::string nomorAntrian;
     std::string waktuDatang;
     std::string waktuDipanggil;
     std::string tanggal;
@@ -34,7 +34,7 @@ struct Patient {
 struct ComparePatient {
     bool operator()(const Patient& a, const Patient& b) const {
         if (a.prioritas == b.prioritas) {
-            return a.nomorAntrian > b.nomorAntrian;
+            return std::stoi(a.nomorAntrian) > std::stoi(b.nomorAntrian);
         }
         return a.prioritas > b.prioritas;
     }

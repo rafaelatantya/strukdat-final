@@ -42,7 +42,7 @@ struct Patient {
     std::string nama;
     std::string layanan;
     int prioritas;
-    int nomorAntrian;
+    std::string nomorAntrian;
     std::string waktuDatang;
     std::string waktuDipanggil;
     std::string tanggal;
@@ -106,7 +106,7 @@ Menjalankan dashboard administratif terintegrasi berbasis browser.
    npm install
    node server.js
    ```
-   *(Backend berjalan di `http://localhost:5000`)*
+   *(Backend berjalan di `http://localhost:7331`)*
 
 2. **Jalankan Dev Server Frontend (React + Vite)**:
    ```bash

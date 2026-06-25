@@ -1,0 +1,159 @@
+.heap-visualizer-container {
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.tree-root {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  padding-bottom: 2rem;
+}
+
+.tree-node-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 10px;
+  position: relative;
+}
+
+.tree-children {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  position: relative;
+}
+
+/* Garis penghubung antar node */
+.tree-children::before {
+  content: '';
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  width: 0;
+  height: 2rem;
+  border-left: 2px solid #ccc;
+}
+
+.tree-children > .tree-node-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -2rem;
+  right: 50%;
+  width: 50%;
+  height: 2px;
+  border-top: 2px solid #ccc;
+}
+
+.tree-children > .tree-node-wrapper:first-child::before {
+  left: 50%;
+  right: auto;
+}
+
+.tree-children > .tree-node-wrapper:only-child::before {
+  display: none;
+}
+
+.tree-node-wrapper.empty {
+  visibility: hidden;
+  width: 60px;
+}
+
+.heap-node {
+  background-color: #fff;
+  border: 2px solid #0d6efd;
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
+  transition: transform 0.2s;
+  position: relative;
+}
+
+.heap-node:hover {
+  transform: scale(1.1);
+}
+
+.heap-node-content {
+  text-align: center;
+}
+
+.heap-index {
+  font-size: 0.6rem;
+  color: #6c757d;
+  margin-bottom: -2px;
+}
+
+.heap-id {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #212529;
+}
+
+.heap-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heap-details span:first-child {
+  font-size: 0.65rem;
+  color: #495057;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+}
+
+.heap-priority-badge {
+  font-size: 0.55rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: white;
+  margin-top: 2px;
+}
+
+.heap-priority-1 { background-color: #dc3545; }
+.heap-priority-2 { background-color: #fd7e14; }
+.heap-priority-3 { background-color: #ffc107; color: #000; }
+.heap-priority-4 { background-color: #198754; }
+
+/* Array View */
+.array-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+}
+
+.array-block {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.array-block .idx {
+  background-color: #e9ecef;
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 2px 8px;
+  border-bottom: 1px solid #ced4da;
+  color: #6c757d;
+}
+
+.array-block .val {
+  padding: 6px 12px;
+  font-weight: bold;
+  text-align: center;
+  color: #0d6efd;
+}

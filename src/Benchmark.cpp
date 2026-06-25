@@ -30,7 +30,7 @@ void runFullBenchmark(int scale, const string& outputFilePath) {
         p.nama = "Pasien " + to_string(i);
         p.layanan = "Poli Umum";
         p.prioritas = (i % 4) + 1; // prioritas 1-4
-        p.nomorAntrian = i;
+        p.nomorAntrian = to_string(i) + "N";
         p.waktuDatang = "08:00";
         p.status = MENUNGGU;
         dataSimulasi.push_back(p);

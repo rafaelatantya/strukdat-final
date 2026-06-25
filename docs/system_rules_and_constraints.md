@@ -14,7 +14,7 @@ Setiap record data pasien harus berisi field-field berikut:
 | **Nama Pasien** | `string` | Tidak boleh kosong. | Nama lengkap pasien. |
 | **Jenis Layanan** | `string` | Tidak boleh kosong. | Unit/Poli tujuan (misal: `Poli Umum`, `UGD`, `Laboratorium`). |
 | **Tingkat Prioritas** | `int` | Rentang: `1` hingga `4` (1 tertinggi). | Kategori penentu urutan pelayanan. |
-| **Nomor Antrian** | `int` | Auto-increment, unik. | Nomor urut yang didapatkan saat registrasi. |
+| **Nomor Antrian** | `string` | Format `[ANGKA]N` (contoh: `1N`). | Nomor urut yang didapatkan saat registrasi. |
 | **Waktu Kedatangan** | `string` | Format: `HH:MM` (24 jam) atau `-`. | Waktu check-in fisik aktual pasien di lokasi loket. Bernilai `-` jika pasien belum check-in. |
 | **Waktu Dipanggil** | `string` | Format: `HH:MM` (24 jam) atau `-`. | Waktu ketika pasien dipanggil oleh dokter. Bernilai `-` jika pasien masih mengantri atau belum datang. |
 | **Tanggal Appointment** | `string` | Format: `YYYY-MM-DD`. | Tanggal kunjungan terjadwal pelayanan pasien. |
@@ -97,6 +97,11 @@ stateDiagram-v2
    * Status pasien diubah menjadi `DIPANGGIL` di dalam Hash Table.
    * Waktu saat tombol panggil ditekan akan secara otomatis dicatat sebagai `waktuDipanggil`.
    * Pasien saat ini secara fisik berada di dalam ruang pemeriksaan dan sedang menjalani tindakan medis bersama dokter.
+
+### 3.2 Pemanggilan Tidak Sesuai Urutan (Bypass Priority)
+Jika petugas mencoba mengubah status pasien secara manual ke `DIPANGGIL` tetapi pasien tersebut bukan prioritas tertinggi di layanan yang sama, sistem akan mengeluarkan peringatan (`WARNING_PRIORITY`). 
+* Jika di-bypass secara paksa (`force = true`), maka pasien akan langsung dipanggil.
+* Supaya heap / priority queue tetap konsisten, C++ backend akan secara otomatis menghancurkan struktur lamanya dan melakukan proses `rebuildHeap()` dari hash table. Hal ini berguna supaya Visualisasi Heap di Web UI juga konsisten dan membersihkan elemen kotor dari pemanggilan yang lompat antrian.
 
 ---
 

@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <algorithm>
 #include "Patient.h"
 
 class SistemAntrianRS {
@@ -21,9 +22,11 @@ private:
     std::string extractJsonValue(const std::string& json, const std::string& key);
 
     // helper validasi format tanggal & waktu
+    void rebuildHeap();
     bool isValidDate(const std::string& date);
     bool isValidTime(const std::string& time);
     bool isPolyBusy(const std::string& layanan);
+    bool isHighestPriorityInPoly(const std::string& id, Patient& outHighest);
 
 public:
     SistemAntrianRS(
@@ -47,7 +50,7 @@ public:
     bool checkInPatient(std::string id, std::string waktuDatang, std::string& errorMsg);
     bool panggilAntrianBerikutnya(Patient& outPatient, std::string& errorMsg);
     bool searchPatient(std::string id, Patient& outPatient, std::string& errorMsg);
-    bool updateStatus(std::string id, int statusBaru, std::string& errorMsg);
+    bool updateStatus(std::string id, int statusBaru, bool force, std::string& errorMsg);
     bool deleteAntrian(std::string id, std::string& errorMsg);
 
     void tampilkanSemuaData();

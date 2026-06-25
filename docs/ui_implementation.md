@@ -523,9 +523,32 @@ Instead of a spinner, use a **skeleton screen**:
 
 ---
 
-## 7. Global Overlays & Feedback
+## 7. Page: Visualisasi Heap (Tab: `heap`)
 
-### 7.1 Toast Notifications
+Shows a tree visualization of the priority queue `std::priority_queue` from the C++ backend.
+
+### 7.1 Visual Hierarchy
+
+The tree is rendered top-down:
+- **Root Node**: The highest priority patient (next in line).
+- **Children**: Rendered based on the array-based representation of the binary heap.
+
+### 7.2 Node Styling
+
+Each node is a card connecting to its parent:
+- **Container**: `--surface-raised` with `--border-default`.
+- **Text**: Displays the patient's queue number (e.g., `#1N`), priority label, and status.
+- **Lines**: SVG or CSS pseudo-elements connecting nodes.
+
+### 7.3 Controls
+
+- **Refresh Button**: Allows the user to manually trigger a re-fetch of the heap state from the backend.
+
+---
+
+## 8. Global Overlays & Feedback
+
+### 8.1 Toast Notifications
 
 Per DESIGN.md §6.7. Positioned **top-right**, slides in from the right edge.
 
@@ -536,7 +559,7 @@ Per DESIGN.md §6.7. Positioned **top-right**, slides in from the right edge.
 
 Auto-dismiss: 4 seconds. Manual dismiss: click `x` button (Lucide `x`, ghost style, right side of toast).
 
-### 7.2 Confirmation Dialogs
+### 8.2 Confirmation Dialogs
 
 Used before destructive actions (cancel patient, load dummy data). Replace `window.confirm()` with a custom modal:
 
@@ -563,7 +586,7 @@ Used before destructive actions (cancel patient, load dummy data). Replace `wind
 
 ---
 
-## 8. Responsive Behavior Summary
+## 9. Responsive Behavior Summary
 
 | Breakpoint | Layout Changes |
 |---|---|
@@ -590,7 +613,7 @@ Each patient rendered as a standalone card:
 
 ---
 
-## 9. API Endpoint Mapping
+## 10. API Endpoint Mapping
 
 Reference for which UI action calls which API endpoint.
 
@@ -604,10 +627,11 @@ Reference for which UI action calls which API endpoint.
 | Cancel/delete patient | POST | `/api/delete` | `{id}` |
 | Load dummy data | POST | `/api/dummy` | — |
 | Run benchmark | GET | `/api/benchmark?scale=N` | — |
+| Get heap tree | GET | `/api/heap` | — |
 
 ---
 
-## 10. File Structure (Frontend)
+## 11. File Structure (Frontend)
 
 Target component organization after refactor:
 
@@ -628,6 +652,8 @@ web/frontend/src/
 │   ├── Toast.jsx               # Toast notification component
 │   ├── BarChart.jsx            # SVG bar chart for benchmarks
 │   ├── BenchmarkView.jsx       # Full benchmark page content
+│   ├── HeapVisualizer.jsx      # Heap tree visualization component
+│   ├── HeapVisualizer.css      # Styling for the heap tree
 │   └── EmptyState.jsx          # Reusable empty state placeholder
 └── utils/
     ├── api.js                  # Fetch wrapper for all API calls

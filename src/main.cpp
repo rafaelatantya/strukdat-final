@@ -206,8 +206,8 @@ int main(int argc, char* argv[]) {
             }
 
             string errorMsg;
-            if (sistem.updateStatus(id, statusBaru, errorMsg)) {
-                cout << "Status pasien berhasil diupdate.\n\n";
+            if (sistem.updateStatus(id, statusBaru, true, errorMsg)) {
+                cout << "\nStatus pasien berhasil diupdate.\n";
             } else {
                 cout << "Gagal: " << errorMsg << "\n\n";
             }

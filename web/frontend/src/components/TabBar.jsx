@@ -7,10 +7,11 @@ const TABS = [
   { id: 'benchmark', label: 'Analisis Performa' },
 ];
 
-export default function TabBar({ activeTab, onTabChange, counts }) {
+export default function TabBar({ activeTab, onTabChange, counts, tabs }) {
+  const currentTabs = tabs || TABS;
   return (
     <div className="tab-bar" role="tablist" aria-label="Navigasi tab halaman">
-      {TABS.map((tab) => (
+      {currentTabs.map((tab) => (
         <button
           key={tab.id}
           role="tab"

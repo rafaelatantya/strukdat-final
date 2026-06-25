@@ -175,9 +175,9 @@ app.post('/api/call-next', async (req, res) => {
   }
 });
 
-// 5. Update status (Selesai/Batal)
-app.post('/api/update-status', async (req, res) => {
-  const { id, status } = req.body;
+// 4. Update status pasien (force bisa dipass untuk override priority warning)
+app.post('/api/status', async (req, res) => {
+  const { id, status, force } = req.body;
   if (!id || status === undefined) {
     return res.status(400).json({
       status: 'error',
@@ -188,8 +188,17 @@ app.post('/api/update-status', async (req, res) => {
     const result = await runCppCommand({
       action: 'update_status',
       id,
-      status: parseInt(status, 10)
+      status: parseInt(status, 10),
+      force: force ? "true" : "false"
     });
+    
+    // Jika result return error warning dari backend, kita mapping json agar front-end tau
+    if (result.status === 'error' && result.message && result.message.startsWith('WARNING_PRIORITY:')) {
+        return res.status(200).json({
+            status: 'warning',
+            message: result.message
+        });
+    }
     res.json(result);
   } catch (error) {
     res.status(500).json({ status: 'error', ...error });
@@ -220,6 +229,16 @@ app.post('/api/delete', async (req, res) => {
 app.post('/api/dummy', async (req, res) => {
   try {
     const result = await runCppCommand({ action: 'dummy_data' });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ status: 'error', ...error });
+  }
+});
+
+// 7.5 Get Heap Array (Struktur Pohon Internal)
+app.get('/api/heap', async (req, res) => {
+  try {
+    const result = await runCppCommand({ action: 'get_heap' });
     res.json(result);
   } catch (error) {
     res.status(500).json({ status: 'error', ...error });

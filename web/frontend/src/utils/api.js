@@ -33,11 +33,11 @@ export async function callNextPatient() {
   return res.json();
 }
 
-export async function updatePatientStatus(id, status) {
-  const res = await fetch(`${API_BASE}/update-status`, {
+export async function updatePatientStatus(id, status, force = false) {
+  const res = await fetch(`${API_BASE}/status`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, status }),
+    body: JSON.stringify({ id, status, force }),
   });
   return res.json();
 }
@@ -58,5 +58,10 @@ export async function loadDummyData() {
 
 export async function runBenchmark(scale) {
   const res = await fetch(`${API_BASE}/benchmark?scale=${scale}`);
+  return res.json();
+}
+
+export async function getHeapData() {
+  const res = await fetch(`${API_BASE}/heap`);
   return res.json();
 }

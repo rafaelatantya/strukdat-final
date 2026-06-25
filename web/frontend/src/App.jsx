@@ -9,6 +9,7 @@ import CheckInModal from './components/CheckInModal';
 import ConfirmDialog from './components/ConfirmDialog';
 import BenchmarkView from './components/BenchmarkView';
 import Toast from './components/Toast';
+import HeapVisualizer from './components/HeapVisualizer';
 import {
   fetchPatients as apiFetchPatients,
   registerPatient,
@@ -18,6 +19,7 @@ import {
   deletePatient,
   loadDummyData,
   runBenchmark,
+  getHeapData,
 } from './utils/api';
 import { getCurrentTimeFull, getTodayDate } from './utils/helpers';
 
@@ -26,6 +28,7 @@ let toastIdCounter = 0;
 function App() {
   // Core state
   const [patients, setPatients] = useState([]);
+  const [heapData, setHeapData] = useState([]);
   const [activeTab, setActiveTab] = useState('active');
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(getCurrentTimeFull());
@@ -93,6 +96,11 @@ function App() {
       } else {
         addToast(data.message || 'Gagal memuat data pasien.', 'error');
       }
+
+      const heapResponse = await getHeapData();
+      if (heapResponse.status === 'success') {
+        setHeapData(heapResponse.data || []);
+      }
     } catch {
       addToast('Gagal terhubung ke API backend.', 'error');
     } finally {
@@ -159,11 +167,26 @@ function App() {
     }
   };
 
-  const handleStatusUpdate = async (id, statusVal) => {
+  const handleStatusUpdate = async (id, statusVal, force = false) => {
     try {
-      const data = await updatePatientStatus(id, statusVal);
+      const data = await updatePatientStatus(id, statusVal, force);
+      if (data.status === 'warning' && data.message.startsWith('WARNING_PRIORITY:')) {
+        const topPatientInfo = data.message.split(':')[1].trim();
+        setConfirmDialog({
+          title: 'Peringatan Prioritas',
+          message: `Pasien yang Anda panggil BUKAN pasien dengan prioritas tertinggi. Pasien teratas adalah: ${topPatientInfo}. Apakah Anda yakin ingin memanggil pasien ini terlebih dahulu?`,
+          confirmLabel: 'Ya, Tetap Panggil',
+          confirmVariant: 'warning',
+          onConfirm: () => {
+            setConfirmDialog(null);
+            handleStatusUpdate(id, statusVal, true);
+          }
+        });
+        return;
+      }
+      
       if (data.status === 'success') {
-        const label = statusVal === 2 ? 'Selesai' : 'Batal';
+        const label = statusVal === 1 ? 'Dipanggil' : statusVal === 2 ? 'Selesai' : 'Batal';
         addToast(`Status pasien berhasil diubah menjadi ${label}.`);
         handleFetchPatients();
       } else {
@@ -172,6 +195,10 @@ function App() {
     } catch {
       addToast('Kesalahan jaringan saat update status.', 'error');
     }
+  };
+
+  const handleCallSpecific = (id) => {
+    handleStatusUpdate(id, 1);
   };
 
   const handleDeletePatient = (id) => {
@@ -249,8 +276,9 @@ function App() {
   const totalCompleted = patients.filter((p) => p.status === 2).length;
   const totalCancelled = patients.filter((p) => p.status === 3).length;
 
-  const currentServing = patients.find((p) => p.status === 1);
-  const busyPolys = patients.filter((p) => p.status === 1).map((p) => p.layanan);
+  const allServing = patients.filter((p) => p.status === 1);
+  const busyPolys = allServing.map((p) => p.layanan);
+  const canCallNext = patients.some((p) => p.status === 0 && !busyPolys.includes(p.layanan));
 
   const getFilteredPatients = () => {
     switch (activeTab) {
@@ -267,6 +295,14 @@ function App() {
 
   const filteredPatients = getFilteredPatients();
   const currentTimeShort = currentTime.slice(0, 5); // HH:MM for forms
+
+  const TABS = [
+    { id: 'active', label: 'Antrian Aktif' },
+    { id: 'scheduled', label: 'Janji Temu' },
+    { id: 'history', label: 'Riwayat' },
+    { id: 'visualizer', label: 'Visualizer Heap' },
+    { id: 'benchmark', label: 'Benchmark' },
+  ];
 
   const tabCounts = {
     active: totalWaiting + totalCalled,
@@ -299,16 +335,30 @@ function App() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           counts={tabCounts}
+          tabs={TABS}
         />
 
         {/* Tab Content */}
-        {activeTab !== 'benchmark' ? (
+        {activeTab === 'benchmark' ? (
+          <BenchmarkView
+            benchmarkScale={benchmarkScale}
+            onScaleChange={setBenchmarkScale}
+            benchmarkResults={benchmarkResults}
+            isBenchmarking={isBenchmarking}
+            onRun={handleRunBenchmark}
+          />
+        ) : activeTab === 'visualizer' ? (
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <HeapVisualizer heapData={heapData} onRefresh={handleFetchPatients} />
+          </div>
+        ) : (
           <>
             {/* Calling Deck (only on active tab) */}
             {activeTab === 'active' && (
               <CallingDeck
-                currentServing={currentServing}
+                allServing={allServing}
                 totalWaiting={totalWaiting}
+                canCallNext={canCallNext}
                 onCallNext={handleCallNext}
                 onComplete={(id) => handleStatusUpdate(id, 2)}
                 onCancel={(id) => handleStatusUpdate(id, 3)}
@@ -332,7 +382,7 @@ function App() {
                   isLoading={isLoading}
                   busyPolys={busyPolys}
                   onCheckIn={handleCheckInClick}
-                  onCallSpecific={(id) => handleStatusUpdate(id, 1)}
+                  onCallSpecific={handleCallSpecific}
                   onComplete={(id) => handleStatusUpdate(id, 2)}
                   onCancelPatient={(id) => handleStatusUpdate(id, 3)}
                   onDeletePatient={handleDeletePatient}
@@ -348,15 +398,6 @@ function App() {
               )}
             </div>
           </>
-        ) : (
-          /* Benchmark Tab */
-          <BenchmarkView
-            benchmarkScale={benchmarkScale}
-            onScaleChange={setBenchmarkScale}
-            benchmarkResults={benchmarkResults}
-            isBenchmarking={isBenchmarking}
-            onRun={handleRunBenchmark}
-          />
         )}
       </main>
 
