@@ -11,7 +11,9 @@ export default function PatientTable({
   patients,
   mode,
   isLoading,
+  busyPolys = [],
   onCheckIn,
+  onCallSpecific,
   onComplete,
   onCancelPatient,
   onDeletePatient,
@@ -120,10 +122,17 @@ export default function PatientTable({
                         </button>
                       </>
                     )}
-                    {/* Waiting: queuing text + Cancel */}
+                    {/* Waiting: queuing text, Call + Cancel */}
                     {patient.status === 0 && (
                       <>
-                        <span className="queue-text-italic">Mengantri...</span>
+                        <button
+                          className="btn btn-success btn-compact"
+                          disabled={busyPolys.includes(patient.layanan)}
+                          onClick={() => onCallSpecific(patient.id)}
+                          title={busyPolys.includes(patient.layanan) ? "Poli sedang melayani pasien lain" : "Panggil pasien ini"}
+                        >
+                          Panggil
+                        </button>
                         <button
                           className="btn btn-ghost-danger btn-compact"
                           onClick={() => onDeletePatient(patient.id)}

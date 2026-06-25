@@ -101,7 +101,7 @@ function App() {
   };
 
   const handleRegister = async (formData) => {
-    if (!formData.id || !formData.nama || !formData.layanan || !formData.tanggal) {
+    if (!formData.nama || !formData.layanan || !formData.tanggal) {
       addToast('Mohon lengkapi semua field registrasi.', 'error');
       return;
     }
@@ -250,6 +250,7 @@ function App() {
   const totalCancelled = patients.filter((p) => p.status === 3).length;
 
   const currentServing = patients.find((p) => p.status === 1);
+  const busyPolys = patients.filter((p) => p.status === 1).map((p) => p.layanan);
 
   const getFilteredPatients = () => {
     switch (activeTab) {
@@ -329,7 +330,9 @@ function App() {
                   patients={filteredPatients}
                   mode={activeTab}
                   isLoading={isLoading}
+                  busyPolys={busyPolys}
                   onCheckIn={handleCheckInClick}
+                  onCallSpecific={(id) => handleStatusUpdate(id, 1)}
                   onComplete={(id) => handleStatusUpdate(id, 2)}
                   onCancelPatient={(id) => handleStatusUpdate(id, 3)}
                   onDeletePatient={handleDeletePatient}

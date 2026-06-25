@@ -138,6 +138,13 @@ bool SistemAntrianRS::isValidTime(const string& timeStr) {
     return regex_match(timeStr, pattern);
 }
 
+bool SistemAntrianRS::isPolyBusy(const string& layanan) {
+    for (const auto& [id, p] : dataPasien) {
+        if (p.layanan == layanan && p.status == DIPANGGIL) return true;
+    }
+    return false;
+}
+
 SistemAntrianRS::SistemAntrianRS(string fileData, string fileBenchmark) {
     nomorBerikutnya = 1;
     namaFileData = fileData;
@@ -224,6 +231,10 @@ void SistemAntrianRS::tampilkanTabelPasien(const vector<Patient>& listPasien) {
 }
 
 bool SistemAntrianRS::insertPatient(string id, string nama, string layanan, int prioritas, string waktuDatang, string tanggal, string& errorMsg) {
+    if (id.empty()) {
+        id = "P" + to_string(nomorBerikutnya);
+    }
+
     if (id.empty() || nama.empty() || layanan.empty() || tanggal.empty()) {
         errorMsg = "Data pasien tidak boleh ada yang kosong.";
         return false;
@@ -237,6 +248,13 @@ bool SistemAntrianRS::insertPatient(string id, string nama, string layanan, int 
     if (!waktuDatang.empty() && waktuDatang != "-" && !isValidTime(waktuDatang)) {
         errorMsg = "Format waktu datang tidak valid (harus HH:MM atau -).";
         return false;
+    }
+
+    if (!waktuDatang.empty() && waktuDatang != "-") {
+        if (tanggal != getCurrentDateStr()) {
+            errorMsg = "Tanggal walk-in harus hari ini (" + getCurrentDateStr() + ").";
+            return false;
+        }
     }
 
     if (!prioritasValid(prioritas)) {
@@ -321,28 +339,42 @@ bool SistemAntrianRS::checkInPatient(string id, string waktuDatang, string& erro
 }
 
 bool SistemAntrianRS::panggilAntrianBerikutnya(Patient& outPatient, string& errorMsg) {
+    vector<Patient> skipped;
+    bool found = false;
+
     while (!antrian.empty()) {
         Patient p = antrian.top();
         antrian.pop();
 
-        // cek map, sapa tau pasiennya udah dibatalin pas masih ngantri
         if (dataPasien[p.id].status == MENUNGGU) {
-            dataPasien[p.id].status = DIPANGGIL;
-            dataPasien[p.id].waktuDipanggil = getCurrentTimeStr();
-            saveToFile();
-            outPatient = dataPasien[p.id];
-
-            if (isInteractiveMode) {
-                cout << "\n>>> [PANGGIL ANTRIAN] Memanggil pasien berikutnya:\n";
-                cout << "    ID: " << outPatient.id << " | Nama: " << outPatient.nama << "\n";
-                cout << "    Status berubah: MENUNGGU -> DIPANGGIL\n";
-                cout << "    Prioritas: " << prioritasToString(outPatient.prioritas) << " | No. Antrian: #" << outPatient.nomorAntrian << "\n";
+            if (isPolyBusy(dataPasien[p.id].layanan)) {
+                skipped.push_back(p);
+            } else {
+                dataPasien[p.id].status = DIPANGGIL;
+                dataPasien[p.id].waktuDipanggil = getCurrentTimeStr();
+                saveToFile();
+                outPatient = dataPasien[p.id];
+                found = true;
+                break;
             }
-
-            return true;
         }
     }
-    errorMsg = "Antrian kosong atau semua pasien dalam antrian sudah dipanggil/dibatalkan.";
+
+    for (const Patient& p : skipped) {
+        antrian.push(p);
+    }
+
+    if (found) {
+        if (isInteractiveMode) {
+            cout << "\n>>> [PANGGIL ANTRIAN] Memanggil pasien berikutnya:\n";
+            cout << "    ID: " << outPatient.id << " | Nama: " << outPatient.nama << "\n";
+            cout << "    Status berubah: MENUNGGU -> DIPANGGIL\n";
+            cout << "    Prioritas: " << prioritasToString(outPatient.prioritas) << " | No. Antrian: #" << outPatient.nomorAntrian << "\n";
+        }
+        return true;
+    }
+
+    errorMsg = "Antrian kosong atau poli untuk pasien teratas sedang melayani pasien lain.";
     return false;
 }
 
@@ -372,6 +404,10 @@ bool SistemAntrianRS::updateStatus(string id, int statusBaru, string& errorMsg) 
     StatusLayanan statusTujuan = (StatusLayanan)statusBaru;
 
     if (statusSekarang == MENUNGGU && statusTujuan == DIPANGGIL) {
+        if (isPolyBusy(it->second.layanan)) {
+            errorMsg = "Poli " + it->second.layanan + " sedang penuh/melayani pasien lain.";
+            return false;
+        }
         it->second.status = DIPANGGIL;
         it->second.waktuDipanggil = getCurrentTimeStr();
         saveToFile();

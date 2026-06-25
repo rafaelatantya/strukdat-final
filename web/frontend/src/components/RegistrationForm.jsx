@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { UserPlus, Dice3 } from 'lucide-react';
-import { generatePatientId, getCurrentTime, getTodayDate } from '../utils/helpers';
+import React, { useState } from 'react';
+import { UserPlus } from 'lucide-react';
+import { getCurrentTime, getTodayDate } from '../utils/helpers';
 
 /**
  * Patient registration form (sidebar).
@@ -8,7 +8,6 @@ import { generatePatientId, getCurrentTime, getTodayDate } from '../utils/helper
  */
 export default function RegistrationForm({ currentTime, onSubmit }) {
   const [formData, setFormData] = useState({
-    id: '',
     nama: '',
     layanan: '',
     prioritas: '4',
@@ -17,18 +16,12 @@ export default function RegistrationForm({ currentTime, onSubmit }) {
     isWalkIn: true,
   });
 
-  useEffect(() => {
-    if (!formData.id) {
-      setFormData((prev) => ({ ...prev, id: generatePatientId() }));
-    }
-  }, []);
-
   const handleField = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleRegenId = () => {
-    handleField('id', generatePatientId());
+    if (field === 'isWalkIn' && value === true) {
+      setFormData((prev) => ({ ...prev, isWalkIn: true, tanggal: getTodayDate() }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -42,7 +35,6 @@ export default function RegistrationForm({ currentTime, onSubmit }) {
     });
     // Reset form
     setFormData({
-      id: generatePatientId(),
       nama: '',
       layanan: '',
       prioritas: '4',
@@ -82,28 +74,6 @@ export default function RegistrationForm({ currentTime, onSubmit }) {
               />
               <span>Booking (Terjadwal)</span>
             </label>
-          </div>
-        </div>
-
-        {/* Patient ID */}
-        <div className="form-group">
-          <label className="form-label" htmlFor="input-patient-id">ID Pasien</label>
-          <div className="input-group">
-            <input
-              id="input-patient-id"
-              type="text"
-              className="form-control form-control--mono"
-              value={formData.id}
-              onChange={(e) => handleField('id', e.target.value.toUpperCase())}
-            />
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={handleRegenId}
-              aria-label="Generate ID baru"
-            >
-              <Dice3 size={18} />
-            </button>
           </div>
         </div>
 
@@ -166,6 +136,7 @@ export default function RegistrationForm({ currentTime, onSubmit }) {
             className="form-control"
             value={formData.tanggal}
             min={getTodayDate()}
+            disabled={formData.isWalkIn}
             onChange={(e) => handleField('tanggal', e.target.value)}
           />
         </div>

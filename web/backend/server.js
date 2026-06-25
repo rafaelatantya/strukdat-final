@@ -79,11 +79,11 @@ app.get('/api/patients', async (req, res) => {
 
 // 2. Registrasi pasien baru
 app.post('/api/patients', async (req, res) => {
-  const { id, nama, layanan, prioritas, waktuDatang, tanggal } = req.body;
-  if (!id || !nama || !layanan || !prioritas || !tanggal) {
+  const { nama, layanan, prioritas, waktuDatang, tanggal } = req.body;
+  if (!nama || !layanan || !prioritas || !tanggal) {
     return res.status(400).json({
       status: 'error',
-      message: 'ID, nama, layanan, prioritas, dan tanggal wajib diisi.'
+      message: 'Nama, layanan, prioritas, dan tanggal wajib diisi.'
     });
   }
 
@@ -106,10 +106,22 @@ app.post('/api/patients', async (req, res) => {
     });
   }
 
+  // Validasi tanggal walk-in harus hari ini
+  if (wd !== '-') {
+    const today = new Date();
+    const todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    if (tanggal !== todayStr) {
+      return res.status(400).json({
+        status: 'error',
+        message: `Tanggal walk-in harus hari ini (${todayStr}).`
+      });
+    }
+  }
+
   try {
     const result = await runCppCommand({
       action: 'insert',
-      id,
+      id: '', // Kosongkan agar C++ auto-generate ID
       nama,
       layanan,
       prioritas: parseInt(prioritas, 10),

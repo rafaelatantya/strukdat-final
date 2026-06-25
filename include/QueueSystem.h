@@ -23,6 +23,7 @@ private:
     // helper validasi format tanggal & waktu
     bool isValidDate(const std::string& date);
     bool isValidTime(const std::string& time);
+    bool isPolyBusy(const std::string& layanan);
 
 public:
     SistemAntrianRS(
