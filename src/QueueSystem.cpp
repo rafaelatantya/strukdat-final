@@ -465,6 +465,17 @@ bool SistemAntrianRS::updateStatus(string id, int statusBaru, bool force, string
         }
         return true;
     }
+    else if (statusSekarang == DIPANGGIL && statusTujuan == BATAL) {
+        p.status = BATAL;
+        saveToFile();
+        rebuildHeap();
+        if (isInteractiveMode) {
+            cout << "\n>>> [BATAL ANTRIAN] Pelayanan pasien dibatalkan:\n";
+            cout << "    ID: " << id << " | Nama: " << p.nama << "\n";
+            cout << "    Status berubah: DIPANGGIL -> BATAL\n";
+        }
+        return true;
+    }
     else if (statusSekarang == MENUNGGU && statusTujuan == BATAL) {
         p.status = BATAL;
         saveToFile();
@@ -506,6 +517,7 @@ bool SistemAntrianRS::updateStatus(string id, int statusBaru, bool force, string
                    "- TERJADWAL -> BATAL (Batal Booking)\n"
                    "- MENUNGGU -> DIPANGGIL\n"
                    "- DIPANGGIL -> SELESAI\n"
+                   "- DIPANGGIL -> BATAL\n"
                    "- MENUNGGU -> BATAL";
         return false;
     }
@@ -518,18 +530,20 @@ bool SistemAntrianRS::deleteAntrian(string id, string& errorMsg) {
         return false;
     }
 
-    if (it->second.status != MENUNGGU) {
-        errorMsg = "Hanya pasien dengan status MENUNGGU yang dapat dibatalkan.";
+    if (it->second.status != MENUNGGU && it->second.status != TERJADWAL) {
+        errorMsg = "Hanya pasien dengan status MENUNGGU atau TERJADWAL yang dapat dibatalkan.";
         return false;
     }
 
+    StatusLayanan statusSebelumnya = it->second.status;
     it->second.status = BATAL;
     saveToFile();
+    rebuildHeap();
 
     if (isInteractiveMode) {
         cout << "\n>>> [BATAL ANTRIAN] Antrian pasien dibatalkan:\n";
         cout << "    ID: " << id << " | Nama: " << it->second.nama << "\n";
-        cout << "    Status berubah: MENUNGGU -> BATAL\n";
+        cout << "    Status berubah: " << statusToString(statusSebelumnya) << " -> BATAL\n";
     }
 
     return true;
@@ -734,6 +748,22 @@ void SistemAntrianRS::loadFromFile() {
     file.close();
 }
 
+// helper buat escape string JSON
+string escapeJsonString(const string& input) {
+    stringstream ss;
+    for (char c : input) {
+        if (c == '"') ss << "\\\"";
+        else if (c == '\\') ss << "\\\\";
+        else if (c == '\n') ss << "\\n";
+        else if (c == '\r') ss << "\\r";
+        else if (c == '\t') ss << "\\t";
+        else if (c == '\b') ss << "\\b";
+        else if (c == '\f') ss << "\\f";
+        else ss << c;
+    }
+    return ss.str();
+}
+
 // eksekutor request JSON dari Node.js
 string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
     string action = extractJsonValue(jsonInput, "action");
@@ -767,7 +797,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "\"status\":\"" << statusToString(p.status) << "\"";
             out << "}}";
         } else {
-            out << "{\"status\":\"error\",\"message\":\"" << errorMsg << "\"}";
+            out << "{\"status\":\"error\",\"message\":\"" << escapeJsonString(errorMsg) << "\"}";
         }
     }
     else if (action == "check_in") {
@@ -790,7 +820,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "\"status\":\"" << statusToString(p.status) << "\"";
             out << "}}";
         } else {
-            out << "{\"status\":\"error\",\"message\":\"" << errorMsg << "\"}";
+            out << "{\"status\":\"error\",\"message\":\"" << escapeJsonString(errorMsg) << "\"}";
         }
     }
     else if (action == "call_next") {
@@ -810,7 +840,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "\"status\":\"" << statusToString(p.status) << "\"";
             out << "}}";
         } else {
-            out << "{\"status\":\"error\",\"message\":\"" << errorMsg << "\"}";
+            out << "{\"status\":\"error\",\"message\":\"" << escapeJsonString(errorMsg) << "\"}";
         }
     }
     else if (action == "search") {
@@ -831,7 +861,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "\"status\":\"" << statusToString(p.status) << "\"";
             out << "}}";
         } else {
-            out << "{\"status\":\"error\",\"message\":\"" << errorMsg << "\"}";
+            out << "{\"status\":\"error\",\"message\":\"" << escapeJsonString(errorMsg) << "\"}";
         }
     }
     else if (action == "update_status") {
@@ -846,9 +876,9 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
             out << "{\"status\":\"success\",\"message\":\"Status pasien berhasil diupdate.\"}";
         } else {
             if (errorMsg.rfind("WARNING_PRIORITY:", 0) == 0) {
-                out << "{\"status\":\"warning\",\"message\":\"" << errorMsg << "\"}";
+                out << "{\"status\":\"warning\",\"message\":\"" << escapeJsonString(errorMsg) << "\"}";
             } else {
-                out << "{\"status\":\"error\",\"message\":\"" << errorMsg << "\"}";
+                out << "{\"status\":\"error\",\"message\":\"" << escapeJsonString(errorMsg) << "\"}";
             }
         }
     }
@@ -859,7 +889,7 @@ string SistemAntrianRS::executeJsonCommand(const string& jsonInput) {
         if (deleteAntrian(id, errorMsg)) {
             out << "{\"status\":\"success\",\"message\":\"Pasien dibatalkan dari antrian.\"}";
         } else {
-            out << "{\"status\":\"error\",\"message\":\"" << errorMsg << "\"}";
+            out << "{\"status\":\"error\",\"message\":\"" << escapeJsonString(errorMsg) << "\"}";
         }
     }
     else if (action == "get_heap") {
