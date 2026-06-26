@@ -10,6 +10,7 @@ import ConfirmDialog from './components/ConfirmDialog';
 import BenchmarkView from './components/BenchmarkView';
 import Toast from './components/Toast';
 import HeapVisualizer from './components/HeapVisualizer';
+import { Search, X } from 'lucide-react';
 import {
   fetchPatients as apiFetchPatients,
   registerPatient,
@@ -30,6 +31,8 @@ function App() {
   const [patients, setPatients] = useState([]);
   const [heapData, setHeapData] = useState([]);
   const [activeTab, setActiveTab] = useState('active');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isGlobalSearch, setIsGlobalSearch] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(getCurrentTimeFull());
 
@@ -293,7 +296,28 @@ function App() {
     }
   };
 
+  const getSearchedPatients = () => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) {
+      return getFilteredPatients();
+    }
+
+    const matches = (p) => {
+      const namaMatch = p.nama ? p.nama.toLowerCase().includes(query) : false;
+      const idMatch = p.id ? p.id.toLowerCase().includes(query) : false;
+      const antrianMatch = p.nomorAntrian ? p.nomorAntrian.toLowerCase().includes(query) : false;
+      return namaMatch || idMatch || antrianMatch;
+    };
+
+    if (isGlobalSearch) {
+      return patients.filter(matches);
+    } else {
+      return getFilteredPatients().filter(matches);
+    }
+  };
+
   const filteredPatients = getFilteredPatients();
+  const searchedPatients = getSearchedPatients();
   const currentTimeShort = currentTime.slice(0, 5); // HH:MM for forms
 
   const TABS = [
@@ -369,15 +393,64 @@ function App() {
             <div className={`content-grid ${activeTab === 'history' ? 'content-grid--full' : ''}`}>
               {/* Table */}
               <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
-                <div style={{ padding: 'var(--space-6)' }}>
-                  <h3 className="card-title" style={{ marginBottom: 'var(--space-4)' }}>
-                    {activeTab === 'active' && 'Daftar Pasien Menunggu & Dilayani'}
-                    {activeTab === 'scheduled' && 'Daftar Pasien Booking Janji Temu'}
-                    {activeTab === 'history' && 'Riwayat Pasien Selesai & Batal'}
-                  </h3>
+                <div style={{ padding: 'var(--space-6)', borderBottom: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
+                    <h3 className="card-title" style={{ margin: 0 }}>
+                      {isGlobalSearch && searchQuery.trim() !== ''
+                        ? 'Hasil Pencarian Global (Semua Status)'
+                        : (activeTab === 'active' && 'Daftar Pasien Menunggu & Dilayani') ||
+                          (activeTab === 'scheduled' && 'Daftar Pasien Booking Janji Temu') ||
+                          (activeTab === 'history' && 'Riwayat Pasien Selesai & Batal')
+                      }
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', width: '100%', maxWidth: '400px' }}>
+                      <div style={{ position: 'relative', flex: 1 }}>
+                        <input
+                          type="text"
+                          placeholder="Cari nama atau ID..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="form-control"
+                          style={{ paddingLeft: '2.5rem', paddingRight: searchQuery ? '2.5rem' : '0.5rem', width: '100%', height: '38px' }}
+                        />
+                        <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                        {searchQuery && (
+                          <button
+                            onClick={() => setSearchQuery('')}
+                            style={{
+                              position: 'absolute',
+                              right: '0.75rem',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--text-muted)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: 0
+                            }}
+                            title="Bersihkan pencarian"
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                        <input
+                          type="checkbox"
+                          checked={isGlobalSearch}
+                          onChange={(e) => setIsGlobalSearch(e.target.checked)}
+                          style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                        />
+                        Cari Global
+                      </label>
+                    </div>
+                  </div>
                 </div>
                 <PatientTable
-                  patients={filteredPatients}
+                  patients={searchedPatients}
                   mode={activeTab}
                   isLoading={isLoading}
                   busyPolys={busyPolys}
@@ -386,6 +459,7 @@ function App() {
                   onComplete={(id) => handleStatusUpdate(id, 2)}
                   onCancelPatient={(id) => handleStatusUpdate(id, 3)}
                   onDeletePatient={handleDeletePatient}
+                  isGlobalSearch={isGlobalSearch && searchQuery.trim() !== ''}
                 />
               </div>
 

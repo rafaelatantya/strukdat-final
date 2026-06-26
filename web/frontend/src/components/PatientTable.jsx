@@ -17,6 +17,7 @@ export default function PatientTable({
   onComplete,
   onCancelPatient,
   onDeletePatient,
+  isGlobalSearch = false,
 }) {
   if (isLoading) {
     return (
@@ -48,8 +49,8 @@ export default function PatientTable({
     return <EmptyState icon={cfg.icon} title={cfg.title} description={cfg.desc} />;
   }
 
-  const showCalled = mode !== 'scheduled';
-  const showActions = mode !== 'history';
+  const showCalled = mode !== 'scheduled' || isGlobalSearch;
+  const showActions = mode !== 'history' || isGlobalSearch;
 
   return (
     <div style={{ overflowX: 'auto' }}>
@@ -60,8 +61,8 @@ export default function PatientTable({
             <th>Nama Pasien</th>
             <th>Poli / Layanan</th>
             <th className="cell-center">Prioritas</th>
-            {mode !== 'scheduled' && <th className="cell-center">No. Antrian</th>}
-            {mode !== 'scheduled' && <th className="cell-center">Datang</th>}
+            {(mode !== 'scheduled' || isGlobalSearch) && <th className="cell-center">No. Antrian</th>}
+            {(mode !== 'scheduled' || isGlobalSearch) && <th className="cell-center">Datang</th>}
             {showCalled && <th className="cell-center">Dipanggil</th>}
             <th className="cell-center">Tanggal</th>
             <th className="cell-center">Status</th>
@@ -82,12 +83,12 @@ export default function PatientTable({
                   {patient.prioritas} — {getPriorityLabel(patient.prioritas)}
                 </span>
               </td>
-              {mode !== 'scheduled' && (
+              {(mode !== 'scheduled' || isGlobalSearch) && (
                 <td className="cell-queue">
                   {patient.status === 4 ? '—' : `#${patient.nomorAntrian}`}
                 </td>
               )}
-              {mode !== 'scheduled' && (
+              {(mode !== 'scheduled' || isGlobalSearch) && (
                 <td className="cell-center cell-time">{patient.waktuDatang}</td>
               )}
               {showCalled && (
@@ -161,7 +162,7 @@ export default function PatientTable({
                     )}
                     {/* History rows: no actions */}
                     {(patient.status === 2 || patient.status === 3) && (
-                      <span className="queue-text-italic">Selesai</span>
+                      <span className="queue-text-italic">{patient.status === 2 ? 'Selesai' : 'Batal'}</span>
                     )}
                   </div>
                 </td>
